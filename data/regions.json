@@ -1,0 +1,156 @@
+[
+    {
+        "name": "All",
+        "lines": [
+            {
+                "code": "RD",
+                "track": 1,
+                "origin": "0",
+                "terminus": "389"
+            },
+            {
+                "code": "RD",
+                "track": 2,
+                "origin": "0",
+                "terminus": "400"
+            },
+            {
+                "code": "GR",
+                "track": 1,
+                "origin": "0",
+                "terminus": "281"
+            },
+            {
+                "code": "GR",
+                "track": 2,
+                "origin": "0",
+                "terminus": "284"
+            },
+            {
+                "code": "OR",
+                "track": 1,
+                "origin": "0",
+                "terminus": "366"
+            },
+            {
+                "code": "OR",
+                "track": 2,
+                "origin": "0",
+                "terminus": "361"
+            },
+            {
+                "code": "SV",
+                "track": 1,
+                "origin": "0",
+                "terminus": "453"
+            },
+            {
+                "code": "SV",
+                "track": 2,
+                "origin": "0",
+                "terminus": "460"
+            },
+            {
+                "code": "BL",
+                "track": 1,
+                "origin": "0",
+                "terminus": "414"
+            },
+            {
+                "code": "BL",
+                "track": 2,
+                "origin": "0",
+                "terminus": "427"
+            },
+            {
+                "code": "YL",
+                "track": 1,
+                "origin": "0",
+                "terminus": "225"
+            },
+            {
+                "code": "YL",
+                "track": 2,
+                "origin": "0",
+                "terminus": "235"
+            }
+        ]
+    },
+    {
+        "name": "DC",
+        "lines": [
+            {
+                "code": "RD",
+                "track": 1,
+                "origin": "120",
+                "terminus": "309"
+            },
+            {
+                "code": "RD",
+                "track": 2,
+                "origin": "117",
+                "terminus": "318"
+            },
+            {
+                "code": "GR",
+                "track": 1,
+                "origin": "66",
+                "terminus": "197"
+            },
+            {
+                "code": "GR",
+                "track": 2,
+                "origin": "63",
+                "terminus": "201"
+            },
+            {
+                "code": "OR",
+                "track": 1,
+                "origin": "170",
+                "terminus": "268"
+            },
+            {
+                "code": "OR",
+                "track": 2,
+                "origin": "160",
+                "terminus": "269"
+            },
+            {
+                "code": "SV",
+                "track": 1,
+                "origin": "355",
+                "terminus": "453"
+            },
+            {
+                "code": "SV",
+                "track": 2,
+                "origin": "351",
+                "terminus": "460"
+            },
+            {
+                "code": "BL",
+                "track": 1,
+                "origin": "220",
+                "terminus": "318"
+            },
+            {
+                "code": "BL",
+                "track": 2,
+                "origin": "222",
+                "terminus": "331"
+            },
+            {
+                "code": "YL",
+                "track": 1,
+                "origin": "143",
+                "terminus": "170"
+            },
+            {
+                "code": "YL",
+                "track": 2,
+                "origin": "145",
+                "terminus": "176"
+            }
+        ]
+    }
+]
