@@ -2,17 +2,6 @@ const WMATA_HOST = "http://api.wmata.com";
 const API_KEY = "2f2fc19294aa43faab04946994efb4b2";
 
 export class WMATAClient {
-  #getUrl(route, params) {
-    const queryParams = new URLSearchParams(params);
-    const url = `${WMATA_HOST}/${route}?${queryParams}`;
-
-    return new URL(url);
-  }
-
-  #getHeaders() {
-    return { "api_key": API_KEY };
-  }
-
   /**
    * Get routes from the WMATA API
    * @returns route information
@@ -28,7 +17,7 @@ export class WMATAClient {
         throw new Error(`HTTP error: ${response.status}`);
       }
 
-      return await response.json();
+      return response.json().then((json) => json["StandardRoutes"] || []);
     } catch (error) {
       alert(`Something went wrong: ${error}`);
     }
@@ -49,9 +38,20 @@ export class WMATAClient {
         throw new Error(`HTTP error: ${response.status}`);
       }
 
-      return await response.json();
+      return response.json().then((json) => json["TrainPositions"] || []);
     } catch (error) {
       alert(`Something went wrong: ${error}`);
     }
+  }
+
+  #getUrl(route, params) {
+    const queryParams = new URLSearchParams(params);
+    const url = `${WMATA_HOST}/${route}?${queryParams}`;
+
+    return new URL(url);
+  }
+
+  #getHeaders() {
+    return { "api_key": API_KEY };
   }
 }

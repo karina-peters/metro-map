@@ -1,155 +1,155 @@
 [
     {
-        "name": "All",
-        "lines": [
+        "Name": "All",
+        "Lines": [
             {
-                "code": "RD",
-                "track": 1,
-                "origin": "0",
-                "terminus": "389"
+                "Code": "RD",
+                "Track": 1,
+                "Origin": "0",
+                "Terminus": "389"
             },
             {
-                "code": "RD",
-                "track": 2,
-                "origin": "0",
-                "terminus": "400"
+                "Code": "RD",
+                "Track": 2,
+                "Origin": "0",
+                "Terminus": "400"
             },
             {
-                "code": "GR",
-                "track": 1,
-                "origin": "0",
-                "terminus": "281"
+                "Code": "GR",
+                "Track": 1,
+                "Origin": "0",
+                "Terminus": "281"
             },
             {
-                "code": "GR",
-                "track": 2,
-                "origin": "0",
-                "terminus": "284"
+                "Code": "GR",
+                "Track": 2,
+                "Origin": "0",
+                "Terminus": "284"
             },
             {
-                "code": "OR",
-                "track": 1,
-                "origin": "0",
-                "terminus": "366"
+                "Code": "OR",
+                "Track": 1,
+                "Origin": "0",
+                "Terminus": "366"
             },
             {
-                "code": "OR",
-                "track": 2,
-                "origin": "0",
-                "terminus": "361"
+                "Code": "OR",
+                "Track": 2,
+                "Origin": "0",
+                "Terminus": "361"
             },
             {
-                "code": "SV",
-                "track": 1,
-                "origin": "0",
-                "terminus": "453"
+                "Code": "SV",
+                "Track": 1,
+                "Origin": "0",
+                "Terminus": "453"
             },
             {
-                "code": "SV",
-                "track": 2,
-                "origin": "0",
-                "terminus": "460"
+                "Code": "SV",
+                "Track": 2,
+                "Origin": "0",
+                "Terminus": "460"
             },
             {
-                "code": "BL",
-                "track": 1,
-                "origin": "0",
-                "terminus": "414"
+                "Code": "BL",
+                "Track": 1,
+                "Origin": "0",
+                "Terminus": "414"
             },
             {
-                "code": "BL",
-                "track": 2,
-                "origin": "0",
-                "terminus": "427"
+                "Code": "BL",
+                "Track": 2,
+                "Origin": "0",
+                "Terminus": "427"
             },
             {
-                "code": "YL",
-                "track": 1,
-                "origin": "0",
-                "terminus": "225"
+                "Code": "YL",
+                "Track": 1,
+                "Origin": "0",
+                "Terminus": "225"
             },
             {
-                "code": "YL",
-                "track": 2,
-                "origin": "0",
-                "terminus": "235"
+                "Code": "YL",
+                "Track": 2,
+                "Origin": "0",
+                "Terminus": "235"
             }
         ]
     },
     {
-        "name": "DC",
-        "lines": [
+        "Name": "DC",
+        "Lines": [
             {
-                "code": "RD",
-                "track": 1,
-                "origin": "120",
-                "terminus": "309"
+                "Code": "RD",
+                "Track": 1,
+                "Origin": "120",
+                "Terminus": "309"
             },
             {
-                "code": "RD",
-                "track": 2,
-                "origin": "117",
-                "terminus": "318"
+                "Code": "RD",
+                "Track": 2,
+                "Origin": "117",
+                "Terminus": "318"
             },
             {
-                "code": "GR",
-                "track": 1,
-                "origin": "66",
-                "terminus": "197"
+                "Code": "GR",
+                "Track": 1,
+                "Origin": "66",
+                "Terminus": "197"
             },
             {
-                "code": "GR",
-                "track": 2,
-                "origin": "63",
-                "terminus": "201"
+                "Code": "GR",
+                "Track": 2,
+                "Origin": "63",
+                "Terminus": "201"
             },
             {
-                "code": "OR",
-                "track": 1,
-                "origin": "170",
-                "terminus": "268"
+                "Code": "OR",
+                "Track": 1,
+                "Origin": "170",
+                "Terminus": "268"
             },
             {
-                "code": "OR",
-                "track": 2,
-                "origin": "160",
-                "terminus": "269"
+                "Code": "OR",
+                "Track": 2,
+                "Origin": "160",
+                "Terminus": "269"
             },
             {
-                "code": "SV",
-                "track": 1,
-                "origin": "355",
-                "terminus": "453"
+                "Code": "SV",
+                "Track": 1,
+                "Origin": "355",
+                "Terminus": "453"
             },
             {
-                "code": "SV",
-                "track": 2,
-                "origin": "351",
-                "terminus": "460"
+                "Code": "SV",
+                "Track": 2,
+                "Origin": "351",
+                "Terminus": "460"
             },
             {
-                "code": "BL",
-                "track": 1,
-                "origin": "220",
-                "terminus": "318"
+                "Code": "BL",
+                "Track": 1,
+                "Origin": "220",
+                "Terminus": "318"
             },
             {
-                "code": "BL",
-                "track": 2,
-                "origin": "222",
-                "terminus": "331"
+                "Code": "BL",
+                "Track": 2,
+                "Origin": "222",
+                "Terminus": "331"
             },
             {
-                "code": "YL",
-                "track": 1,
-                "origin": "143",
-                "terminus": "170"
+                "Code": "YL",
+                "Track": 1,
+                "Origin": "143",
+                "Terminus": "170"
             },
             {
-                "code": "YL",
-                "track": 2,
-                "origin": "145",
-                "terminus": "176"
+                "Code": "YL",
+                "Track": 2,
+                "Origin": "145",
+                "Terminus": "176"
             }
         ]
     }
