@@ -8,11 +8,10 @@ export class System {
   constructor() {
     this.WMATAClient = new WMATAClient();
 
-    this.lines = {}; // Map< string, Map< string, Array<Circuit> > >
-
-    this.stnCodeToName = {}; // Map< string, string >
-    this.cktIdToSeq = {}; // Map< string, Map< string, string > >
-    this.regToSeq = {}; // Map< string, Array< Map< string, string > > >
+    this.lineToCkts = new Map(); // Map< string, Array< Circuit > >
+    this.stnCodeToName = new Map(); // Map< string, string >
+    this.cktIdToSeq = new Map(); // Map< string, Map< string, string > >
+    this.regToSeq = new Map(); // Map< string, Map< string, Object > >
   }
 
   /**
@@ -22,8 +21,9 @@ export class System {
     try {
       const stations = await fetch(STATIONS_PATH).then((res) => res.json());
 
+      // Populate map with station codes and names
       for (const { Code, Name } of stations) {
-        this.stnCodeToName[Code] = Name;
+        this.stnCodeToName.set(Code, Name);
       }
     } catch (error) {
       console.error(`Unable to process stations: ${error}`);
@@ -38,12 +38,13 @@ export class System {
       const regions = await fetch(REGIONS_PATH).then((res) => res.json());
 
       for (const { Name, Lines } of regions) {
-        // Add region if not yet created
-        this.regToSeq[Name] = this.regToSeq[Name] || {};
+        // Add region to map if not yet created
+        const seqMap = getOrInitializeMapValue(this.regToSeq, Name, new Map());
 
+        // Populate map with region names and bounds
         for (const { Code, Track, Origin, Terminus } of Lines) {
           const lineId = this.#getLineId(Code, Track);
-          this.regToSeq[Name][lineId] = { origin: Origin, terminus: Terminus };
+          seqMap.set(lineId, { origin: Origin, terminus: Terminus });
         }
       }
     } catch (error) {
@@ -59,15 +60,19 @@ export class System {
       const routes = await this.WMATAClient.fetchRoutes();
 
       for (const { LineCode, TrackNum, TrackCircuits } of routes) {
-        // Add line if not yet created
         const lineId = this.#getLineId(LineCode, TrackNum);
-        this.lines[lineId] = this.lines[lineId] || [];
-        this.cktIdToSeq[lineId] = this.cktIdToSeq[lineId] || {};
 
+        // Add line to maps if not yet created
+        const crktArray = getOrInitializeMapValue(this.lineToCkts, lineId, []);
+        const seqMap = getOrInitializeMapValue(this.cktIdToSeq, lineId, new Map());
+
+        // Ensure circuits are in ascending sequence order
+        TrackCircuits.sort((a, b) => a.SeqNum - b.SeqNum);
+
+        // Populate maps with lines, circuit ids and sequence numbers
         for (const { SeqNum, StationCode, CircuitId } of TrackCircuits) {
-          // TODO: figure out how to do this more safely/efficiently
-          this.lines[lineId].splice(SeqNum, 0, new Circuit(CircuitId, SeqNum, StationCode, 0, 0));
-          this.cktIdToSeq[lineId][CircuitId] = SeqNum;
+          crktArray?.push(new Circuit(CircuitId, SeqNum, StationCode, 0, 0));
+          seqMap?.set(CircuitId, SeqNum);
         }
       }
     } catch (error) {
@@ -79,10 +84,11 @@ export class System {
    * Display a list of station names and codes
    */
   displayStations() {
-    const outputList = Object.entries(this.stnCodeToName).map(([stationCode, stationName]) => `${stationName} (${stationCode})`);
+    // Create list of elements to be printed
+    const outputList = [...this.stnCodeToName].map(([stationCode, stationName]) => `${stationName} (${stationCode})`);
 
     // Display stations list
-    const dataElement = document.getElementById("data");
+    const dataElement = document.querySelector("#sidebar-data");
     printList(dataElement, outputList, true);
   }
 
@@ -90,10 +96,11 @@ export class System {
    * Display a list of circuit ids and stations for each line
    */
   displayLines() {
-    const outputList = Object.entries(this.lines).map(([lineId, circuits]) => {
+    // Create list of elements to be printed
+    const outputList = [...this.lineToCkts].map(([lineId, circuits]) => {
       const circuitList = circuits
         .map((circuit) => {
-          const stationName = circuit.station !== null ? ` ${this.stnCodeToName[circuit.station]}` : "";
+          const stationName = circuit.station !== null ? ` ${this.stnCodeToName.get(circuit.station)}` : "";
           return `[${circuit.id}]${stationName}`;
         })
         .join(", ");
@@ -102,7 +109,7 @@ export class System {
     });
 
     // Display lines list
-    const dataElement = document.getElementById("data");
+    const dataElement = document.querySelector("#sidebar-data");
     printList(dataElement, outputList, true);
   }
 
@@ -112,22 +119,23 @@ export class System {
   async displayPositionsList() {
     const trainPositions = await this.WMATAClient.fetchTrainPositions();
 
+    // Create list of elements to be printed
     const outputList = trainPositions
       .filter(({ LineCode }) => LineCode !== null)
       .map(({ TrainId, LineCode, DirectionNum, CircuitId, DestinationStationCode }) => {
         const lineId = this.#getLineId(LineCode, DirectionNum);
-        const seqNum = this.cktIdToSeq[lineId]?.[CircuitId];
+        const seqNum = this.cktIdToSeq.get(lineId)?.get(CircuitId);
 
         // Log undefined circuits
         if (seqNum === undefined) {
           console.warn(`Sequence number is undefined for circuit [${CircuitId}]`);
         }
 
-        return `${TrainId} (${lineId}, DEST: ${this.stnCodeToName[DestinationStationCode]}): ${CircuitId} [${seqNum}]`;
+        return `${TrainId} (${lineId}, DEST: ${this.stnCodeToName.get(DestinationStationCode)}): ${CircuitId} [${seqNum}]`;
       });
 
     // Display positions list
-    const dataElement = document.getElementById("data");
+    const dataElement = document.querySelector("#sidebar-data");
     printList(dataElement, outputList, true);
   }
 
@@ -138,16 +146,17 @@ export class System {
   async displayPositions(region = "All") {
     const trainPositions = await this.WMATAClient.fetchTrainPositions();
 
-    const outputList = Object.entries(this.lines).map(([lineId, circuits]) => {
+    // Create list of elements to be printed
+    const outputList = [...this.lineToCkts].map(([lineId, circuits]) => {
       // Extract relevant track segment for the region
-      const bounds = this.regToSeq[region]?.[lineId];
-      const trackCircuits = region !== "All" ? circuits?.slice(bounds.origin, bounds.terminus) : circuits;
+      const regionBounds = this.regToSeq.get(region)?.get(lineId);
+      const trackCircuits = region !== "All" ? circuits?.slice(regionBounds.origin, regionBounds.terminus) : circuits;
 
-      // Set circuit output for updated data
+      // Set circuit output with updated data
       const circuitList = trackCircuits
         .map((circuit) => {
           const circuitIndicator = "_";
-          const stationIndicator = circuit.station !== null ? `${this.stnCodeToName[circuit.station]}` : "";
+          const stationIndicator = circuit.station !== null ? `${this.stnCodeToName.get(circuit.station)}` : "";
           const trainIndicator = trainPositions.some(({ CircuitId, LineCode, DirectionNum }) => {
             return CircuitId === circuit.id && this.#getLineId(LineCode, DirectionNum) === lineId;
           })
@@ -181,7 +190,7 @@ export function clearData(dataElement) {
   dataElement.innerHTML = "";
 }
 
-export function printParagraph(parent, output, overwriteData = false) {
+function printParagraph(parent, output, overwriteData = false) {
   if (overwriteData) {
     clearData(parent);
   }
@@ -192,7 +201,7 @@ export function printParagraph(parent, output, overwriteData = false) {
   parent.appendChild(newChild);
 }
 
-export function printList(parent, outputList, overwriteData = false) {
+function printList(parent, outputList, overwriteData = false) {
   if (overwriteData) {
     clearData(parent);
   }
@@ -200,4 +209,11 @@ export function printList(parent, outputList, overwriteData = false) {
   for (const element of outputList) {
     printParagraph(parent, element);
   }
+}
+
+function getOrInitializeMapValue(map, key, defaultValue) {
+  if (!map.has(key)) {
+    map.set(key, defaultValue);
+  }
+  return map.get(key);
 }

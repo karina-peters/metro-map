@@ -9,7 +9,7 @@ const linesButton = document.querySelector("button#lines");
 const hideButton = document.querySelector("button#hide");
 const helperButton = document.querySelector("button#helper");
 const regionSelect = document.querySelector("#region-select");
-const dataContainer = document.querySelector("#data");
+const sidebarContainer = document.querySelector("#sidebar-data");
 
 function displayMap(region) {
   clearInterval(refreshIntervalId);
@@ -46,7 +46,7 @@ regionSelect.addEventListener("change", (event) => {
 
 hideButton.addEventListener("click", (event) => {
   clearInterval(refreshIntervalId);
-  clearData(dataContainer);
+  clearData(sidebarContainer);
 });
 
 helperButton.addEventListener("click", (event) => {

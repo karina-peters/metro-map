@@ -27,6 +27,8 @@ body {
   padding: 0 1rem;
 }
 
-.buttons-right {
+.sidebar {
   float: right;
+  margin-left: 30px;
+  width: 40%;
 }
