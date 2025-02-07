@@ -83,19 +83,18 @@ export class System {
   /**
    * Display a list of station names and codes
    */
-  displayStations() {
+  displayStations(parentElement) {
     // Create list of elements to be printed
     const outputList = [...this.stnCodeToName].map(([stationCode, stationName]) => `${stationName} (${stationCode})`);
 
     // Display stations list
-    const dataElement = document.querySelector("#sidebar-data");
-    printList(dataElement, outputList, true);
+    printList(parentElement, outputList, true);
   }
 
   /**
    * Display a list of circuit ids and stations for each line
    */
-  displayLines() {
+  displayLines(parentElement) {
     // Create list of elements to be printed
     const outputList = [...this.lineToCkts].map(([lineId, circuits]) => {
       const circuitList = circuits
@@ -109,14 +108,13 @@ export class System {
     });
 
     // Display lines list
-    const dataElement = document.querySelector("#sidebar-data");
-    printList(dataElement, outputList, true);
+    printList(parentElement, outputList, true);
   }
 
   /**
    * Fetch and display a list of updated train positions
    */
-  async displayPositionsList() {
+  async displayPositionsList(parentElement) {
     const trainPositions = await this.WMATAClient.fetchTrainPositions();
 
     // Create list of elements to be printed
@@ -135,15 +133,14 @@ export class System {
       });
 
     // Display positions list
-    const dataElement = document.querySelector("#sidebar-data");
-    printList(dataElement, outputList, true);
+    printList(parentElement, outputList, true);
   }
 
   /**
    * Fetch and display a map of updated train positions
    * @param {string} region the region to display (All, DC, ...)
    */
-  async displayPositions(region = "All") {
+  async displayPositions(parentElement, region = "All") {
     const trainPositions = await this.WMATAClient.fetchTrainPositions();
 
     // Create list of elements to be printed
@@ -171,8 +168,7 @@ export class System {
     });
 
     // Display positions map
-    const dataElement = document.getElementById("data");
-    printList(dataElement, outputList, true);
+    printList(parentElement, outputList, true);
   }
 
   /**

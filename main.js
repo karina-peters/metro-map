@@ -9,14 +9,16 @@ const linesButton = document.querySelector("button#lines");
 const hideButton = document.querySelector("button#hide");
 const helperButton = document.querySelector("button#helper");
 const regionSelect = document.querySelector("#region-select");
+
+const dataContainer = document.querySelector("#data");
 const sidebarContainer = document.querySelector("#sidebar-data");
 
 function displayMap(region) {
   clearInterval(refreshIntervalId);
-  system.displayPositions(region);
+  system.displayPositions(dataContainer, region);
 
   // Update every eight seconds
-  refreshIntervalId = setInterval(() => system.displayPositions(region), 8000);
+  refreshIntervalId = setInterval(() => system.displayPositions(dataContainer, region), 8000);
 }
 
 // Init
@@ -27,17 +29,17 @@ await system.populateRegions();
 // Setup event handlers
 positionsListButton.addEventListener("click", (event) => {
   clearInterval(refreshIntervalId);
-  system.displayPositionsList();
+  system.displayPositionsList(sidebarContainer);
 });
 
 stationsButton.addEventListener("click", (event) => {
   clearInterval(refreshIntervalId);
-  system.displayStations();
+  system.displayStations(sidebarContainer);
 });
 
 linesButton.addEventListener("click", (event) => {
   clearInterval(refreshIntervalId);
-  system.displayLines();
+  system.displayLines(sidebarContainer);
 });
 
 regionSelect.addEventListener("change", (event) => {
