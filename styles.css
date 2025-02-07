@@ -7,45 +7,26 @@ you're new to CSS they may seem a little complicated, but you can scroll down
 to this section's matching END comment to see page-specific styles.
 ******************************************************************************/
 
-
 /* 
   The style rules specify elements by type and by attributes such as class and ID
   Each section indicates an element or elements, then lists the style properties to apply
   See if you can cross-reference the rules in this file with the elements in index.html
 */
 
-/* Our default values set as CSS variables */
-:root {
-    --color-bg: #69F7BE;
-    --color-text-main: #000000;
-    --color-text-header: #2800FF;
-    --color-primary: #FFFF00;
-    --wrapper-height: 87vh;
-    --image-max-width: 300px;
-    --image-margin: 3rem;
-    --font-family: "HK Grotesk";
-    --font-family-header: "HK Grotesk";
-  }
-  
-  /* Basic page style resets */
-  * {
-    box-sizing: border-box;
-  }
-  [hidden] {
-    display: none !important;
-  }
-  
-  /* Import fonts */
-  @font-face {
-    font-family: HK Grotesk;
-    src: url("https://cdn.glitch.me/605e2a51-d45f-4d87-a285-9410ad350515%2FHKGrotesk-Regular.otf?v=1603136326027")
-      format("opentype");
-  }
-  @font-face {
-    font-family: HK Grotesk;
-    font-weight: bold;
-    src: url("https://cdn.glitch.me/605e2a51-d45f-4d87-a285-9410ad350515%2FHKGrotesk-Bold.otf?v=1603136323437")
-      format("opentype");
-  }
-  
-  /* Other styles below */
+/* Import fonts */
+/* @font-face {
+  font-family: HK Grotesk;
+  src: url("https://cdn.glitch.me/605e2a51-d45f-4d87-a285-9410ad350515%2FHKGrotesk-Regular.otf?v=1603136326027") format("opentype");
+} */
+
+/* Other styles below */
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  margin: 2rem;
+  padding: 0 1rem;
+}
+
+.buttons-right {
+  float: right;
+}

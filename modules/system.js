@@ -65,6 +65,7 @@ export class System {
         this.cktIdToSeq[lineId] = this.cktIdToSeq[lineId] || {};
 
         for (const { SeqNum, StationCode, CircuitId } of TrackCircuits) {
+          // TODO: figure out how to do this more safely/efficiently
           this.lines[lineId].splice(SeqNum, 0, new Circuit(CircuitId, SeqNum, StationCode, 0, 0));
           this.cktIdToSeq[lineId][CircuitId] = SeqNum;
         }
@@ -82,7 +83,7 @@ export class System {
 
     // Display stations list
     const dataElement = document.getElementById("data");
-    printList(dataElement, outputList);
+    printList(dataElement, outputList, true);
   }
 
   /**
