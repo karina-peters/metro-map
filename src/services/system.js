@@ -1,5 +1,5 @@
-import { Circuit } from "./circuit.js";
-import { WMATAClient } from "./wmata.js";
+import { Circuit } from "../models/circuit.js";
+import { WMATAClient } from "../repositories/wmata.js";
 
 const STATIONS_PATH = "data/stations.json";
 const REGIONS_PATH = "data/regions.json";

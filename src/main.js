@@ -1,4 +1,4 @@
-import { System, clearData } from "./modules/system.js";
+import { System, clearData } from "./services/system.js";
 
 let system = new System();
 let refreshIntervalId = -1;
