@@ -152,7 +152,7 @@ export class System {
       // Set circuit output with updated data
       const circuitList = trackCircuits
         .map((circuit) => {
-          const circuitIndicator = "_";
+          const circuitIndicator = "·";
           const stationIndicator = circuit.station !== null ? `${this.stnCodeToName.get(circuit.station)}` : "";
           const trainIndicator = trainPositions.some(({ CircuitId, LineCode, DirectionNum }) => {
             return CircuitId === circuit.id && this.#getLineId(LineCode, DirectionNum) === lineId;
