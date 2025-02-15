@@ -20,6 +20,11 @@ to this section's matching END comment to see page-specific styles.
 } */
 
 /* Other styles below */
+:root {
+  --variable-name: 10px;
+  /* font-size: var(--variable-name); */
+}
+
 body {
   font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.5;

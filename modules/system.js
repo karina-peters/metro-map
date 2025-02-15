@@ -8,25 +8,25 @@ export class System {
   constructor() {
     this.WMATAClient = new WMATAClient();
 
-    this.lineToCkts = new Map(); // Map< string, Array< Circuit > >
     this.stnCodeToName = new Map(); // Map< string, string >
-    this.cktIdToSeq = new Map(); // Map< string, Map< string, string > >
-    this.regToSeq = new Map(); // Map< string, Map< string, Object > >
+    this.lineToCktList = new Map(); // Map< string, Array< Circuit > >
+    this.lineToCktSeqMap = new Map(); // Map< string, Map< string, string > >
+    this.lineToRegSeqMap = new Map(); // Map< string, Map< string, Object > >
   }
 
   /**
    * Fetch station information and associate station names with codes
    */
   async populateStations() {
-    try {
-      const stations = await fetch(STATIONS_PATH).then((res) => res.json());
+    const stations = await fetch(STATIONS_PATH).then((res) => res.json());
 
-      // Populate map with station codes and names
-      for (const { Code, Name } of stations) {
-        this.stnCodeToName.set(Code, Name);
-      }
-    } catch (error) {
-      console.error(`Unable to process stations: ${error}`);
+    if (stations === null || stations.length === 0) {
+      console.error("Station information is missing!");
+    }
+
+    // Populate map with station codes and names
+    for (const { Code, Name } of stations) {
+      this.stnCodeToName.set(Code, Name);
     }
   }
 
@@ -34,21 +34,22 @@ export class System {
    * Fetch region information and associate region names with sequence bounds
    */
   async populateRegions() {
-    try {
-      const regions = await fetch(REGIONS_PATH).then((res) => res.json());
+    const regions = await fetch(REGIONS_PATH).then((res) => res.json());
 
-      for (const { Name, Lines } of regions) {
-        // Add region to map if not yet created
-        const seqMap = getOrInitializeMapValue(this.regToSeq, Name, new Map());
+    if (regions === null || regions.length === 0) {
+      console.error("Region information is missing!");
+      return;
+    }
 
-        // Populate map with region names and bounds
-        for (const { Code, Track, Origin, Terminus } of Lines) {
-          const lineId = this.#getLineId(Code, Track);
-          seqMap.set(lineId, { origin: Origin, terminus: Terminus });
-        }
+    for (const { Name, Lines } of regions) {
+      // Add region to map if not yet created
+      const seqMap = getOrInitializeMapValue(this.lineToRegSeqMap, Name, new Map());
+
+      // Populate map with region names and sequence boundaries
+      for (const { Code, Track, Origin, Terminus } of Lines) {
+        const lineId = this.#getLineId(Code, Track);
+        seqMap.set(lineId, { origin: Origin, terminus: Terminus });
       }
-    } catch (error) {
-      console.error(`Unable to process regions: ${error}`);
     }
   }
 
@@ -56,27 +57,28 @@ export class System {
    * Fetch route information and associate route lines with circuits
    */
   async populateLines() {
-    try {
-      const routes = await this.WMATAClient.fetchRoutes();
+    const routes = await this.WMATAClient.fetchRoutes();
 
-      for (const { LineCode, TrackNum, TrackCircuits } of routes) {
-        const lineId = this.#getLineId(LineCode, TrackNum);
+    if (routes === null || routes.length === 0) {
+      console.error("Route information is missing!");
+      return;
+    }
 
-        // Add line to maps if not yet created
-        const crktArray = getOrInitializeMapValue(this.lineToCkts, lineId, []);
-        const seqMap = getOrInitializeMapValue(this.cktIdToSeq, lineId, new Map());
+    for (const { LineCode, TrackNum, TrackCircuits } of routes) {
+      const lineId = this.#getLineId(LineCode, TrackNum);
 
-        // Ensure circuits are in ascending sequence order
-        TrackCircuits.sort((a, b) => a.SeqNum - b.SeqNum);
+      // Add line if not yet created
+      const crktArray = getOrInitializeMapValue(this.lineToCktList, lineId, []);
+      const seqMap = getOrInitializeMapValue(this.lineToCktSeqMap, lineId, new Map());
 
-        // Populate maps with lines, circuit ids and sequence numbers
-        for (const { SeqNum, StationCode, CircuitId } of TrackCircuits) {
-          crktArray?.push(new Circuit(CircuitId, SeqNum, StationCode, 0, 0));
-          seqMap?.set(CircuitId, SeqNum);
-        }
+      // Ensure circuits are in ascending sequence order
+      TrackCircuits.sort((a, b) => a.SeqNum - b.SeqNum);
+
+      // Populate maps with lines, circuit ids and sequence numbers
+      for (const { SeqNum, StationCode, CircuitId } of TrackCircuits) {
+        crktArray?.push(new Circuit(CircuitId, SeqNum, StationCode, 0, 0));
+        seqMap?.set(CircuitId, SeqNum);
       }
-    } catch (error) {
-      console.error(`Unable to process lines: ${error}`);
     }
   }
 
@@ -96,7 +98,7 @@ export class System {
    */
   displayLines(parentElement) {
     // Create list of elements to be printed
-    const outputList = [...this.lineToCkts].map(([lineId, circuits]) => {
+    const outputList = [...this.lineToCktList].map(([lineId, circuits]) => {
       const circuitList = circuits
         .map((circuit) => {
           const stationName = circuit.station !== null ? ` ${this.stnCodeToName.get(circuit.station)}` : "";
@@ -122,7 +124,7 @@ export class System {
       .filter(({ LineCode }) => LineCode !== null)
       .map(({ TrainId, LineCode, DirectionNum, CircuitId, DestinationStationCode }) => {
         const lineId = this.#getLineId(LineCode, DirectionNum);
-        const seqNum = this.cktIdToSeq.get(lineId)?.get(CircuitId);
+        const seqNum = this.lineToCktSeqMap.get(lineId)?.get(CircuitId);
 
         // Log undefined circuits
         if (seqNum === undefined) {
@@ -144,23 +146,23 @@ export class System {
     const trainPositions = await this.WMATAClient.fetchTrainPositions();
 
     // Create list of elements to be printed
-    const outputList = [...this.lineToCkts].map(([lineId, circuits]) => {
+    const outputList = [...this.lineToCktList].map(([lineId, circuits]) => {
       // Extract relevant track segment for the region
-      const regionBounds = this.regToSeq.get(region)?.get(lineId);
+      const regionBounds = this.lineToRegSeqMap.get(region)?.get(lineId);
       const trackCircuits = region !== "All" ? circuits?.slice(regionBounds.origin, regionBounds.terminus) : circuits;
 
       // Set circuit output with updated data
       const circuitList = trackCircuits
         .map((circuit) => {
-          const circuitIndicator = "·";
-          const stationIndicator = circuit.station !== null ? `${this.stnCodeToName.get(circuit.station)}` : "";
-          const trainIndicator = trainPositions.some(({ CircuitId, LineCode, DirectionNum }) => {
+          const circuitHasStation = circuit.station !== null;
+          const trainInCircuit = trainPositions.some(({ CircuitId, LineCode, DirectionNum }) => {
             return CircuitId === circuit.id && this.#getLineId(LineCode, DirectionNum) === lineId;
-          })
-            ? "*"
-            : "";
+          });
 
-          return `${circuitIndicator}${stationIndicator}${trainIndicator}`;
+          const circuitIndicator = trainInCircuit ? "|" : "·";
+          const stationIndicator = circuitHasStation ? `${this.stnCodeToName.get(circuit.station)}` : "";
+
+          return `${circuitIndicator}${stationIndicator}`;
         })
         .join("");
 
@@ -211,5 +213,6 @@ function getOrInitializeMapValue(map, key, defaultValue) {
   if (!map.has(key)) {
     map.set(key, defaultValue);
   }
+
   return map.get(key);
 }
