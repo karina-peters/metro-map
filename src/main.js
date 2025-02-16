@@ -1,6 +1,9 @@
-import { System, clearData } from "./services/system.js";
+import { Dashboard } from "./views/dashboard.js";
+import { MetroMap } from "./views/map.js";
+import { clearData } from "./utils/helpers.js";
 
-let system = new System();
+const map = new MetroMap();
+const dashboard = new Dashboard();
 let refreshIntervalId = -1;
 
 const positionsListButton = document.querySelector("button#positionsL");
@@ -15,31 +18,26 @@ const sidebarContainer = document.querySelector("#sidebar-data");
 
 function displayMap(region) {
   clearInterval(refreshIntervalId);
-  system.displayPositions(dataContainer, region);
+  map.displayMap(dataContainer, region);
 
   // Update every eight seconds
-  refreshIntervalId = setInterval(() => system.displayPositions(dataContainer, region), 8000);
+  refreshIntervalId = setInterval(() => map.displayMap(dataContainer, region), 8000);
 }
-
-// Init
-await system.populateLines();
-await system.populateStations();
-await system.populateRegions();
 
 // Setup event handlers
 positionsListButton.addEventListener("click", (event) => {
   clearInterval(refreshIntervalId);
-  system.displayPositionsList(sidebarContainer);
+  dashboard.displayPositionsList(sidebarContainer);
 });
 
 stationsButton.addEventListener("click", (event) => {
   clearInterval(refreshIntervalId);
-  system.displayStations(sidebarContainer);
+  dashboard.displayStations(sidebarContainer);
 });
 
 linesButton.addEventListener("click", (event) => {
   clearInterval(refreshIntervalId);
-  system.displayLines(sidebarContainer);
+  dashboard.displayLines(sidebarContainer);
 });
 
 regionSelect.addEventListener("change", (event) => {
