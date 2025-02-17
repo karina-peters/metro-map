@@ -1,57 +1,86 @@
 import { system } from "../services/system.js";
-import { printList } from "../utils/helpers.js";
 
-export class Dashboard {
-  constructor() {}
+import { printList } from "../utils/helpers.js";
+import { TabManager } from "../utils/tabManager.js";
+
+export class Dashboard extends TabManager {
+  constructor() {
+    super([
+      {
+        buttonId: "stn-list-btn",
+        contentId: "stn-list-content",
+        shouldRefresh: false,
+        loadData: async (elem) => await this.#fillStations(elem),
+      },
+      {
+        buttonId: "line-list-btn",
+        contentId: "line-list-content",
+        shouldRefresh: false,
+        loadData: async (elem) => await this.#fillLines(elem),
+      },
+      {
+        buttonId: "pos-list-btn",
+        contentId: "pos-list-content",
+        shouldRefresh: true,
+        loadData: async (elem) => await this.#fillPositions(elem),
+      },
+    ]);
+  }
 
   /**
-   * Display a list of station names and codes
-   * @param {HTMLElement} parentElement - The element to display the stations in
+   * Print a formatted list of station names and codes to the provided container
    */
-  async displayStations(parentElement) {
+  #fillStations = async (container) => {
     const stations = await system.getAllStations();
     const outputList = stations.map(([stationCode, stationName]) => `${stationName} (${stationCode})`);
 
-    printList(parentElement, outputList, true);
-  }
+    printList(container, outputList, true);
+  };
 
   /**
-   * Display a list of circuit IDs and stations for each line
-   * @param {HTMLElement} parentElement - The element to display the circuits in
+   * Print a formatted list of circuit IDs and stations for each line to the provided container
    */
-  async displayLines(parentElement) {
+  #fillLines = async (container) => {
     const circuits = await system.getAllCircuits();
     const outputList = await this.#formatMetroLines(circuits);
 
-    printList(parentElement, outputList, true);
-  }
+    printList(container, outputList, true);
+  };
 
   /**
-   * Display a list of updated train positions
-   * @param {HTMLElement} parentElement - The element to display the train positions in
+   * Print a list of updated train positions to the provided container
    */
-  async displayPositionsList(parentElement) {
+  #fillPositions = async (container) => {
     const trainPositions = await system.getTrainPositions();
-    const outputList = await this.#formatPositionList(trainPositions);
+    const outputList = await this.#formatTrainPositions(trainPositions);
 
-    printList(parentElement, outputList, true);
-  }
+    printList(container, outputList, true);
+  };
 
   /**
    * Format circuit IDs and station names for each line
-   * @param {Array} circuits - Array of [lineId, circuits] pairs
+   * @param {Array<[string, Array<Circuits>]>} cktPairs - Array of [lineId, circuits] pairs
+   * @returns {Promise<Array<string>>} Formatted list of circuits for each metro line
+   */
+  async #formatMetroLines(cktPairs) {
+    return Promise.all(
+      cktPairs.map(async ([lineId, lineCircuits]) => {
+        const circuitList = await this.#formatCircuitList(lineCircuits);
+        return `${lineId}: ${circuitList.join(", ")}`;
+      })
+    );
+  }
+
+  /**
+   * Format circuit IDs and station names for display
+   * @param {Array<Circuit>} circuits - Array of circuit
    * @returns {Promise<Array<string>>} Formatted list of circuits
    */
-  async #formatMetroLines(circuits) {
+  async #formatCircuitList(circuits) {
     return Promise.all(
-      circuits.map(async ([lineId, lineCircuits]) => {
-        const circuitList = await Promise.all(
-          lineCircuits.map(async (circuit) => {
-            const stationName = circuit.station ? ` ${await system.getStationName(circuit.station)}` : "";
-            return `[${circuit.id}]${stationName}`;
-          })
-        );
-        return `${lineId}: ${circuitList.join(", ")}`;
+      circuits.map(async (circuit) => {
+        const stationName = circuit.station ? ` ${await system.getStationName(circuit.station)}` : "";
+        return `[${circuit.id}]${stationName}`;
       })
     );
   }
@@ -61,7 +90,7 @@ export class Dashboard {
    * @param {Array} trainPositions - Array of train position objects
    * @returns {Promise<Array<string>>} Formatted list of train positions
    */
-  async #formatPositionList(trainPositions) {
+  async #formatTrainPositions(trainPositions) {
     return Promise.all(
       trainPositions
         .filter(({ LineCode }) => LineCode !== null)

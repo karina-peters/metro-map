@@ -11,23 +11,43 @@
     <script src="src/main.js" type="module" defer></script>
   </head>
   <body>
-    <h1>Welcome to my INST 630 Final Project!</h1>
-    <!-- TODO: create nav header with Map and Dashboard views -->
-    <!-- TODO: set these options dynamically -->
-    <label for="region-select">Map Region: </label>
-    <select name="regions" id="region-select">
-      <option value="All">All</option>
-      <option value="DC">DC</option>
-    </select>
-    <div class="sidebar">
-      <button id="stations">Show Stations</button>
-      <button id="lines">Show Lines</button>
-      <button id="positionsL">Show Train Positions List</button>
-      <button id="hide">Clear data</button>
-      <button id="helper">Do helper stuff</button>
-      <div id="sidebar-data"></div>
+    <!-- Header -->
+    <header class="header">
+      <h1>Welcome to my INST 630 Final Project!</h1>
+      <nav class="nav-horizontal">
+        <button class="view-tab selected" id="map-tab">Map</button>
+        <button class="view-tab" id="list-tab">Lists</button>
+      </nav>
+    </header>
+    <!-- View Content -->
+    <div id="map-content" class="">
+      <section class="sidebar">
+        <button id="map-vis-btn" class="active">Map</button>
+        <button id="line-vis-btn" class="">Lines (TODO)</button>
+      </section>
+      <main class="data-container">
+        <label for="region-select">Map Region: </label>
+        <select name="regions" id="region-select">
+          <option value="All">All</option>
+          <option value="DC">DC</option>
+        </select>
+        <div id="map-vis-content" class=""></div>
+        <div id="line-vis-content" class="hidden"></div>
+      </main>
     </div>
-
-    <div id="data"></div>
+    <div id="list-content" class="hidden">
+      <section class="sidebar">
+        <button id="stn-list-btn" class="active">Show Stations</button>
+        <button id="line-list-btn" class="">Show Lines</button>
+        <button id="pos-list-btn" class="">Show Train Positions List</button>
+      </section>
+      <main class="data-container">
+        <div id="stn-list-content" class=""></div>
+        <div id="line-list-content" class="hidden"></div>
+        <div id="pos-list-content" class="hidden"></div>
+      </main>
+    </div>
+    <!-- Footer -->
+    <footer></footer>
   </body>
 </html>
