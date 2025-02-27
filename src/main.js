@@ -1,7 +1,7 @@
 import { TabManager } from "./utils/tabManager.js";
 
-import { Dashboard } from "./views/dashboard.js";
-import { MetroMap } from "./views/map.js";
+import { initializeDashboard } from "./views/dashboard.js";
+import { initializeMap } from "./views/map.js";
 
 const viewManager = new TabManager([
   {
@@ -16,10 +16,7 @@ const viewManager = new TabManager([
   },
 ]);
 
-const map = new MetroMap();
-const dashboard = new Dashboard();
-
 // Initialize views
-await map.init();
-await dashboard.init();
+await initializeMap();
+await initializeDashboard();
 await viewManager.init();

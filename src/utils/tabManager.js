@@ -1,3 +1,11 @@
+/**
+ * @typedef {Object} Tab
+ * @property {string} buttonId
+ * @property {string} contentId
+ * @property {(e: HTMLElement) => void} [loadData]
+ * @property {boolean} [shouldRefresh]
+ * @property {number} [refreshRate]
+ */
 export class TabManager {
   #tabs;
   #refreshIntervalId;
@@ -5,7 +13,7 @@ export class TabManager {
 
   /**
    * Initializes a new instance of TabManager
-   * @param {Array} tabs - An array of tab objects, containing a required buttonId and contentId, and optional loadData, shouldRefresh, and refreshRate properties
+   * @param {Array<Tab>} tabs - An array of Tab objects to initialize
    */
   constructor(tabs) {
     this.#tabs = tabs;
@@ -14,7 +22,7 @@ export class TabManager {
   }
 
   /**
-   * Initializes the tab system by pre-loading content and setting up event listeners.
+   * Initializes the tab system by pre-loading content and setting up event listeners
    */
   async init() {
     for (const [index, tab] of this.#tabs.entries()) {
@@ -43,7 +51,7 @@ export class TabManager {
   /**
    * Refreshes the content of the provided tab
    * If the tab has a refreshRate defined, an interval is reset
-   * @param {number} [index=this.#activeIndex] - The index of the tab to refresh.
+   * @param {number} [index=this.#activeIndex] - The index of the tab to refresh
    */
   refreshContent(index = this.#activeIndex) {
     const tab = this.#tabs[index];
