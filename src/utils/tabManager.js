@@ -2,7 +2,7 @@
  * @typedef {Object} Tab
  * @property {string} buttonId
  * @property {string} contentId
- * @property {(e: HTMLElement) => void} [loadData]
+ * @property {async (e: HTMLElement) => void} [loadData]
  * @property {boolean} [shouldRefresh]
  * @property {number} [refreshRate]
  */
@@ -32,6 +32,16 @@ export class TabManager {
       // Pre-load the data for this section if a loadData function is provided
       if (tab.loadData) {
         await tab.loadData(content);
+      }
+
+      if (index === 0) {
+        // Refresh content if requested
+        if (tab.shouldRefresh) {
+          this.refreshContent(index);
+        }
+
+        // Activate default tab
+        this.#activateTab(index);
       }
 
       // Set up a click handler for this tab's activation button

@@ -12,12 +12,13 @@ const tabs = [
     contentId: "map-vis-content",
     shouldRefresh: true,
     refreshRate: REFRESH_RATE,
-    loadData: async (elem) => await fillMap(elem),
+    loadData: async (elem) => await drawMap(elem),
   },
 ];
 
-// Set default region
+// Set default inputs
 let region = "All";
+let showLabels = false;
 
 /**
  * Initialize map tabs and setup event listeners
@@ -32,20 +33,28 @@ export async function initializeMap() {
     region = regionSelect.value;
     tabManager.refreshContent();
   });
+
+  const labelsInput = document.querySelector("#stn-labels");
+  labelsInput.addEventListener("change", async (event) => {
+    showLabels = labelsInput.checked;
+    tabManager.refreshContent();
+  });
 }
 
 /**
- * Print a map with updated train positions to the provided container
+ * Draw a map with updated train positions to the provided container
  * @param {string} region - The region to display (All, DC, ...)
  */
-export async function fillMap(container) {
+export async function drawMap(container) {
   const trainPositions = await getTrainPositions();
   const circuits = await getAllCircuits();
   const outputList = await formatMetroLines(circuits, trainPositions, region);
 
+  // TODO: canvas drawing here
   printList(container, outputList, true);
 }
 
+// TODO: change these all to draw functions
 /**
  * Format metro lines with train positions for display
  * @param {Array} circuits - Array of [lineId, circuits] pairs
@@ -79,7 +88,7 @@ async function formatCircuitList(circuits, trainPositions, lineId) {
       });
 
       const circuitIndicator = trainInCircuit ? "|" : "·";
-      const stationIndicator = circuit.stnCode ? ` ${await getStationName(circuit.stnCode)}` : "";
+      const stationIndicator = circuit.stnCode && showLabels ? ` ${await getStationName(circuit.stnCode)}` : "";
 
       return `${circuitIndicator}${stationIndicator}`;
     })

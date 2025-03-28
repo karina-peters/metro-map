@@ -18,6 +18,7 @@ export function printList(parent, outputList, overwriteData = false) {
     clearData(parent);
   }
 
+  // This should just use map eventually with an interpolated html string
   for (const element of outputList) {
     printParagraph(parent, element);
   }

@@ -134,6 +134,7 @@ export async function getTrainPositions() {
   return await fetchTrainPositions();
 }
 
+// TODO: should these functions return a new map rather than operating on the map in place?
 /**
  * Fetch station information and associate station names with codes
  */
