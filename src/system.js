@@ -1,5 +1,5 @@
 import { fetchRoutes, fetchTrainPositions } from "./wmata.js";
-import { getOrInitializeMapValue } from "../utils/helpers.js";
+import { getOrInitializeMapValue } from "./helpers.js";
 
 const STATIONS_PATH = "data/stations.json";
 const REGIONS_PATH = "data/regions.json";
