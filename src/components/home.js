@@ -1,4 +1,4 @@
-import { navigateTo } from "../state";
+import { navigateTo } from "../state.js";
 
 const template = () => {
   return `
@@ -18,7 +18,7 @@ const template = () => {
   // etc.
 })();
 
-export const renderComponent = () => {
+export const render = () => {
   // Render template
   const container = document.querySelector(".container");
   container.innerHTML = template();

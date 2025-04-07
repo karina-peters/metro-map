@@ -1,4 +1,12 @@
-import { getLineId, getTrainPositions, getStationName, getSequenceNum } from "../system";
+import { REFRESH_RATE, metroSystem } from "../system.js";
+import { Subject } from "rxjs";
+
+const refresh$ = new Subject();
+
+// TODO: add this to state manager
+const state = {
+  refreshIntervalId: null,
+};
 
 const template = () => {
   return `
@@ -13,15 +21,30 @@ const template = () => {
   // Handle state/routing
 })();
 
-export const renderComponent = async () => {
+export const render = async () => {
   // Render main template
   const container = document.querySelector(".container");
   container.innerHTML = template();
 
   // Draw async content
-  await fillPositions();
+  await drawPositions();
 
+  // Setup refresh subscription
+  refresh$.subscribe(async () => {
+    await drawPositions();
+  });
+
+  // Setup periodic refreshes
+  state.refreshIntervalId = setInterval(() => refresh$.next(), REFRESH_RATE);
   attachEventListeners();
+};
+
+/**
+ * Pauses component updates
+ */
+export const pause = () => {
+  clearInterval(state.refreshIntervalId);
+  state.refreshIntervalId = null;
 };
 
 /**
@@ -36,17 +59,17 @@ const attachEventListeners = () => {
 /**
  * Print a list of updated train positions to the provided container
  */
-const fillPositions = async () => {
+const drawPositions = async () => {
   try {
-    const positionData = await getTrainPositions();
+    const positionData = await metroSystem.fetchTrainPositions();
     const outputList = await formatTrainPositions(positionData);
 
     const container = document.querySelector(".content-wrapper");
     container.innerHTML = `
-          <ul class="metro-trains">
-            ${outputList.map((train) => `<li>${train}</li>`).join("")}
-          </ul>
-        `;
+    <ul class="metro-trains">
+        ${outputList.map((train) => `<li>${train}</li>`).join("")}
+    </ul>
+    `;
   } catch (error) {
     console.error("Failed to draw train positions:", error);
     const container = document.querySelector(".content-wrapper");
@@ -64,15 +87,10 @@ const formatTrainPositions = async (trainPositions) => {
     trainPositions
       .filter(({ LineCode }) => LineCode !== null)
       .map(async ({ TrainId, LineCode, DirectionNum, CircuitId, DestinationStationCode }) => {
-        const lineId = getLineId(LineCode, DirectionNum);
-        const seqNum = await getSequenceNum(lineId, CircuitId);
+        const lineId = metroSystem.getLineId(LineCode, DirectionNum);
 
-        if (seqNum === undefined) {
-          console.warn(`Sequence number is undefined for circuit [${CircuitId}]`);
-        }
-
-        const destination = await getStationName(DestinationStationCode);
-        return `${TrainId} (${lineId}, DEST: ${destination}): ${CircuitId} [${seqNum}]`;
+        const destination = await metroSystem.getStationName(DestinationStationCode);
+        return `${TrainId} (${lineId}, DEST: ${destination}): ${CircuitId}`;
       })
   );
 };

@@ -1,204 +1,121 @@
-import { fetchRoutes, fetchTrainPositions } from "./wmata.js";
 import { getOrInitializeMapValue } from "./helpers.js";
 
-const STATIONS_PATH = "data/stations.json";
-const REGIONS_PATH = "data/regions.json";
+export const REFRESH_RATE = 8000;
+export const REGIONS = {
+  ALL: "All",
+  DC: "DC",
+};
 
-/**
- * @typedef {Object} Circuit
- * @property {string} id
- * @property {string} seqNum
- * @property {string} stnCode
- * @property {number} [mapX]
- * @property {number} [mapY]
- */
+class SystemService {
+  constructor() {
+    this.dataPromise = null;
+    this.dataLoaded = false;
 
-const stnCodeToName = new Map(); // Map< string, string >
-const lineToCktList = new Map(); // Map< string, Array< Circuit > >
-const lineToCktSeqMap = new Map(); // Map< string, Map< string, string > >
-const lineToRegSeqMap = new Map(); // Map< string, Map< string, Object > >
-
-/**
- * Get a line id for the provided line code and direction indicator
- * @param {string} lineCode the line code (e.g. BL)
- * @param {string} lineNum the line direction indicator (1 or 2)
- * @returns a line identifier
- */
-export function getLineId(lineCode, lineNum) {
-  return `${lineCode}-${lineNum}`;
-}
-
-/**
- * Get a list of all station codes and names
- * @returns {Promise<Array<[string, string]>>} A list of station code-name pairs
- */
-export async function getAllStations() {
-  if (stnCodeToName.size === 0) {
-    await populateStations();
+    this.stnCodeToName = new Map(); // Map< string, string >
+    this.cktListCache = new Map(); // Map< string, Map< string, Array< string > >
   }
 
-  return [...stnCodeToName];
-}
-
-/**
- * Get the name of a station given its code
- * @param {string} code The station code
- * @returns {Promise<string | undefined>} The station name, or undefined if not found
- */
-export async function getStationName(code) {
-  if (stnCodeToName.size === 0) {
-    await populateStations();
+  async init() {
+    this.dataPromise = Promise.all([this._loadStationNames(), this._loadCircuits()]).then(() => (this.dataLoaded = true));
   }
 
-  return stnCodeToName.get(code);
-}
+  getLineId = (lineCode, lineNum) => `${lineCode}-${lineNum}`;
 
-/**
- * Get a list of all circuits for all lines
- * @returns {Promise<Array<[string, Array<Circuit>]>>} A list of line-circuit pairs
- */
-export async function getAllCircuits() {
-  if (lineToCktList.size === 0) {
-    await populateLines();
+  async getStationName(code) {
+    if (!this.dataLoaded) await this.dataPromise;
+
+    const name = this.stnCodeToName.get(code);
+    if (!name) throw new Error("Code not found");
+
+    return name;
   }
 
-  return [...lineToCktList];
-}
+  async getCircuits(regionId) {
+    if (!this.dataLoaded) await this.dataPromise;
 
-/**
- * Get the circuits for a specific line
- * @param {string} lineId The line identifier (e.g., "BL-1")
- * @returns {Promise<Array<Circuit> | undefined>} A list of circuits for the given line, or undefined if not found
- */
-export async function getCircuits(lineId) {
-  if (lineToCktList.size === 0) {
-    await populateLines();
+    const circuits = this.cktListCache.get(regionId);
+    if (!circuits) throw new Error("Code not found");
+
+    return Array.from(circuits.entries().map(([key, value]) => ({ lineId: key, circuits: value })));
   }
 
-  return lineToCktList.get(lineId);
-}
+  async fetchStations() {
+    const response = await fetch("/api/stations", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
 
-/**
- * Get the circuits for a specific line within a given region
- * @param {string} lineId The line identifier (e.g., "BL-1")
- * @param {string} region The region name (e.g., "All", "DC", etc.)
- * @returns {Promise<Array<Circuit> | undefined>} A list of circuits within the specified region, or undefined if not found
- */
-export async function getCircuitsInRegion(lineId, region) {
-  if (lineToCktList.size === 0) {
-    await populateLines();
+    if (!response.ok) throw new Error(response.statusText);
+
+    return await response.json().then((r) => r.data);
   }
 
-  const circuits = lineToCktList.get(lineId);
-  if (region === "All") {
-    return circuits;
+  async fetchLines() {
+    const response = await fetch("/api/lines", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) throw new Error(response.statusText);
+
+    return await response.json().then((r) => r.data);
   }
 
-  const regBounds = await getRegionBounds(region, lineId);
-  return circuits?.slice(regBounds.origin, regBounds.terminus);
-}
+  async fetchCircuits(params = undefined) {
+    const queryParams = new URLSearchParams(params);
+    const response = await fetch(`/api/circuits${params ? `?${queryParams}` : ""}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
 
-/**
- * Get the sequence number of a circuit within a line
- * @param {string} lineId The line identifier (e.g., "BL-1")
- * @param {string} circuitId The circuit identifier
- * @returns {Promise<number | undefined>} The sequence number of the circuit, or undefined if not found
- */
-export async function getSequenceNum(lineId, circuitId) {
-  if (lineToCktSeqMap.size === 0) {
-    await populateLines();
+    if (!response.ok) throw new Error(response.statusText);
+
+    return await response.json().then((r) => r.data);
   }
 
-  return lineToCktSeqMap.get(lineId)?.get(circuitId);
-}
+  async fetchTrainPositions() {
+    const response = await fetch("/api/trains", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
 
-/**
- * Get the bounds of a region for a given line
- * @param {string} region The region name (e.g., "All", "DC", etc.)
- * @param {string} lineId The line identifier (e.g., "BL-1")
- * @returns {Promise<{origin: number, terminus: number} | undefined>} The start and end indices of the region, or undefined if not found
- */
-export async function getRegionBounds(region, lineId) {
-  if (lineToRegSeqMap.size === 0) {
-    await populateRegions();
+    if (!response.ok) throw new Error(response.statusText);
+
+    return await response.json().then((r) => r.data);
   }
 
-  return lineToRegSeqMap.get(region)?.get(lineId);
-}
+  async _loadStationNames() {
+    const stations = await this.fetchStations();
 
-/**
- * Retrieve realtime train positions from the WMATA API
- * @returns a list of train positions
- */
-export async function getTrainPositions() {
-  return await fetchTrainPositions();
-}
+    if (stations === null || stations.length === 0) {
+      console.error("Station information is missing!");
+      return;
+    }
 
-// TODO: should these functions return a new map rather than operating on the map in place?
-/**
- * Fetch station information and associate station names with codes
- */
-async function populateStations() {
-  const stations = await fetch(STATIONS_PATH).then((res) => res.json());
-
-  if (stations === null || stations.length === 0) {
-    console.error("Station information is missing!");
+    // Populate map with station codes and names
+    for (const { code, name } of stations) {
+      this.stnCodeToName.set(code, name);
+    }
   }
 
-  // Populate map with station codes and names
-  for (const { Code, Name } of stations) {
-    stnCodeToName.set(Code, Name);
-  }
-}
+  async _loadCircuits() {
+    for (const regionId of Object.values(REGIONS)) {
+      const cktsByLine = await this.fetchCircuits({ regionId: regionId });
 
-/**
- * Fetch region information and associate region names with sequence bounds
- */
-async function populateRegions() {
-  const regions = await fetch(REGIONS_PATH).then((res) => res.json());
+      if (cktsByLine === null || cktsByLine.length === 0) {
+        console.error(`Circuit information for region ${regionId} is missing!`);
+        return;
+      }
 
-  if (regions === null || regions.length === 0) {
-    console.error("Region information is missing!");
-    return;
-  }
-
-  for (const { Name, Lines } of regions) {
-    // Add region to map if not yet created
-    const seqMap = getOrInitializeMapValue(lineToRegSeqMap, Name, new Map());
-
-    // Populate map with region names and sequence boundaries
-    for (const { Code, Track, Origin, Terminus } of Lines) {
-      const lineId = getLineId(Code, Track);
-      seqMap.set(lineId, { origin: Origin, terminus: Terminus });
+      // Populate region map with lines and their circuits
+      const regionToLines = getOrInitializeMapValue(this.cktListCache, regionId, new Map());
+      for (const { lineId, circuits } of cktsByLine) {
+        regionToLines.set(lineId, circuits);
+      }
     }
   }
 }
 
-/**
- * Fetch route information and associate route lines with circuits
- */
-async function populateLines() {
-  const routes = await fetchRoutes();
+const metroSystem = new SystemService();
 
-  if (routes === null || routes.length === 0) {
-    console.error("Route information is missing!");
-    return;
-  }
-
-  for (const { LineCode, TrackNum, TrackCircuits } of routes) {
-    const lineId = getLineId(LineCode, TrackNum);
-
-    // Add line if not yet created
-    const crktArray = getOrInitializeMapValue(lineToCktList, lineId, []);
-    const seqMap = getOrInitializeMapValue(lineToCktSeqMap, lineId, new Map());
-
-    // Ensure circuits are in ascending sequence order
-    TrackCircuits.sort((a, b) => a.SeqNum - b.SeqNum);
-
-    // Populate maps with lines, circuit ids and sequence numbers
-    for (const { SeqNum, StationCode, CircuitId } of TrackCircuits) {
-      crktArray?.push({ id: CircuitId, seqNum: SeqNum, stnCode: StationCode, mapX: 0, mapY: 0 });
-      seqMap?.set(CircuitId, SeqNum);
-    }
-  }
-}
+export { metroSystem };

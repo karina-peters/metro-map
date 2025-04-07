@@ -9,7 +9,20 @@ module.exports = {
     filename: "main.js",
   },
   devServer: {
-    static: path.join(__dirname, "dist"),
+    static: {
+      directory: path.join(__dirname, "dist"),
+    },
+    port: 8080, // Frontend dev server port
+    proxy: [
+      {
+        context: ["/api"],
+        target: "http://localhost:3000/", // Backend server address
+        secure: false,
+        changeOrigin: true,
+        logLevel: "debug",
+      },
+    ],
+    hot: true,
   },
   module: {
     rules: [

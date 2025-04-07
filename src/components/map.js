@@ -1,18 +1,12 @@
-import { getTrainPositions, getAllCircuits, getCircuitsInRegion, getLineId, getStationName } from "../system.js";
+import { REGIONS, REFRESH_RATE, metroSystem } from "../system.js";
 import { Subject } from "rxjs";
-
-// Set constants
-const REFRESH_RATE = 8000;
-const REGIONS = {
-  ALL: "All",
-  DC: "DC",
-};
 
 const refresh$ = new Subject();
 
 // Set component state
+// TODO: add this to state manager
 const state = {
-  region: REGIONS.ALL,
+  regionId: REGIONS.ALL,
   showLabels: false,
   refreshIntervalId: null,
 };
@@ -25,8 +19,8 @@ const template = () => `
     <div class="region-control">
       <label for="region-select">Map Region: </label>
       <select name="regions" id="region-select">
-        <option value="${REGIONS.ALL}" ${state.region === REGIONS.ALL ? "selected" : ""}>${REGIONS.ALL}</option>
-        <option value="${REGIONS.DC}" ${state.region === REGIONS.DC ? "selected" : ""}>${REGIONS.DC}</option>
+        <option value="${REGIONS.ALL}" ${state.regionId === REGIONS.ALL ? "selected" : ""}>${REGIONS.ALL}</option>
+        <option value="${REGIONS.DC}" ${state.regionId === REGIONS.DC ? "selected" : ""}>${REGIONS.DC}</option>
       </select>
     </div>
     <div class="label-control">
@@ -40,7 +34,7 @@ const template = () => `
 /**
  * Render component template and setup event listeners
  */
-export const renderComponent = async () => {
+export const render = async () => {
   // Render main template
   const container = document.querySelector(".container");
   container.innerHTML = template();
@@ -63,7 +57,7 @@ export const renderComponent = async () => {
 /**
  * Pauses component updates
  */
-export const pauseComponent = () => {
+export const pause = () => {
   clearInterval(state.refreshIntervalId);
   state.refreshIntervalId = null;
 };
@@ -79,7 +73,7 @@ const attachEventListeners = () => {
   // Region selector
   const regionSelect = document.querySelector("#region-select");
   regionSelect.addEventListener("change", () => {
-    state.region = regionSelect.value;
+    state.regionId = regionSelect.value;
     refresh$.next();
   });
 
@@ -96,9 +90,9 @@ const attachEventListeners = () => {
  */
 const drawMap = async () => {
   try {
-    const circuits = await getAllCircuits();
-    const trainPositions = await getTrainPositions();
-    const outputList = await formatMetroLines(circuits, trainPositions, state.region);
+    const circuits = await metroSystem.getCircuits(state.regionId);
+    const trainPositions = await metroSystem.fetchTrainPositions();
+    const outputList = await formatMetroLines(circuits, trainPositions);
 
     const container = document.querySelector(".content-wrapper");
     container.innerHTML = `
@@ -113,47 +107,26 @@ const drawMap = async () => {
   }
 };
 
-/**
- * Formats metro lines with train positions for display
- * @param {Array} circuits - Array of [lineId, circuits] pairs
- * @param {Array} trainPositions - List of current train positions
- * @param {string} region - The region to display
- * @returns {Promise<Array<string>>} Formatted list of metro lines
- */
-const formatMetroLines = async (circuits, trainPositions, region) => {
+const formatMetroLines = async (cktsByLine, trainPositions) => {
   return Promise.all(
-    circuits.map(async ([lineId]) => {
-      const regCircuits = await getCircuitsInRegion(lineId, region);
-      const circuitList = await formatCircuitList(regCircuits, trainPositions, lineId);
+    cktsByLine.map(async (line) => {
+      const circuitList = await Promise.all(line.circuits.map(async (ckt) => getMapSymbol(ckt, line.lineId, trainPositions)));
 
-      return `${lineId}: ${circuitList}`;
+      return `${line.lineId}: ${circuitList.join("")}`;
     })
   );
 };
 
-/**
- * Formats circuits with train presence indicators and station names
- * @param {Array} circuits - List of circuits
- * @param {Array} trainPositions - List of train positions
- * @param {string} lineId - The line identifier
- * @returns {Promise<string>} Formatted string of circuits
- */
-const formatCircuitList = async (circuits, trainPositions, lineId) => {
-  const formattedCircuits = await Promise.all(
-    circuits.map(async (circuit) => {
-      const hasTrainInCircuit = trainPositions.some(
-        ({ CircuitId, LineCode, DirectionNum }) => CircuitId === circuit.id && getLineId(LineCode, DirectionNum) === lineId
-      );
-      const circuitIndicator = hasTrainInCircuit ? "|" : "·";
-
-      let stationIndicator = "";
-      if (circuit.stnCode && state.showLabels) {
-        stationIndicator = ` ${await getStationName(circuit.stnCode)}`;
-      }
-
-      return `${circuitIndicator}${stationIndicator}`;
-    })
+const getMapSymbol = async (circuit, lineId, trainPositions) => {
+  const hasTrainInCircuit = trainPositions.some(
+    ({ CircuitId, LineCode, DirectionNum }) => CircuitId === circuit.id && metroSystem.getLineId(LineCode, DirectionNum) === lineId
   );
+  const circuitIndicator = hasTrainInCircuit ? "|" : "·";
 
-  return formattedCircuits.join("");
+  let stationIndicator = "";
+  if (circuit.stnCode && state.showLabels) {
+    stationIndicator = ` ${await metroSystem.getStationName(circuit.stnCode)}`;
+  }
+
+  return `${circuitIndicator}${stationIndicator}`;
 };

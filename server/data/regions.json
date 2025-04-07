@@ -1,6 +1,6 @@
 [
     {
-        "Name": "All",
+        "Id": "All",
         "Lines": [
             {
                 "Code": "RD",
@@ -77,7 +77,7 @@
         ]
     },
     {
-        "Name": "DC",
+        "Id": "DC",
         "Lines": [
             {
                 "Code": "RD",

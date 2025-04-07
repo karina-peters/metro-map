@@ -1,4 +1,4 @@
-import { getAllStations } from "../system";
+import { metroSystem } from "../system.js";
 
 const template = () => {
   return `
@@ -13,7 +13,7 @@ const template = () => {
   // Handle state/routing
 })();
 
-export const renderComponent = async () => {
+export const render = async () => {
   // Render main template
   const container = document.querySelector(".container");
   container.innerHTML = template();
@@ -38,15 +38,15 @@ const attachEventListeners = () => {
  */
 const drawStations = async () => {
   try {
-    const stations = await getAllStations();
-    const outputList = stations.map(([stationCode, stationName]) => `${stationName} (${stationCode})`);
+    const stations = await metroSystem.fetchStations();
+    const outputList = stations.map(({ code, name }) => `${name} (${code})`);
 
     const container = document.querySelector(".content-wrapper");
     container.innerHTML = `
-          <ul class="metro-stations">
-            ${outputList.map((station) => `<li>${station}</li>`).join("")}
-          </ul>
-        `;
+      <ul class="metro-stations">
+        ${outputList.map((station) => `<li>${station}</li>`).join("")}
+      </ul>
+    `;
   } catch (error) {
     console.error("Failed to draw stations:", error);
     const container = document.querySelector(".content-wrapper");
