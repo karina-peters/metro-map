@@ -11,8 +11,8 @@ class SystemService {
     this.dataPromise = null;
     this.dataLoaded = false;
 
-    this.stnCodeToName = new Map(); // Map< string, string >
-    this.cktListCache = new Map(); // Map< string, Map< string, Array< string > >
+    this.stnCodeToName = new Map(); // Map<string, string>
+    this.cktListCache = new Map(); // Map<string, Map<string, Array< string>>
   }
 
   async init() {

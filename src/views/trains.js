@@ -1,17 +1,11 @@
-import { REFRESH_RATE, metroSystem } from "../system.js";
-import { Subject } from "rxjs";
+import { metroSystem, REFRESH_RATE } from "../helpers/system.js";
+import { Subject, takeUntil, timer } from "rxjs";
 
-const refresh$ = new Subject();
-
-// TODO: add this to state manager
-const state = {
-  refreshIntervalId: null,
-};
+const pauseRefresh$ = new Subject();
+const headingText = "Trains";
 
 const template = () => {
   return `
-    <button class="btn-back">Back</button>
-    <h1>Hello, Trains</h1>
     <div class=content-wrapper></div>
   `;
 };
@@ -22,20 +16,21 @@ const template = () => {
 })();
 
 export const render = async () => {
+  // Render heading
+  const textElement = document.querySelector(".header-target .heading-text");
+  textElement.textContent = headingText;
+
   // Render main template
-  const container = document.querySelector(".container");
+  const container = document.querySelector(".content-target");
   container.innerHTML = template();
 
-  // Draw async content
-  await drawPositions();
+  // Refresh content
+  timer(0, REFRESH_RATE)
+    .pipe(takeUntil(pauseRefresh$))
+    .subscribe(async () => {
+      await drawPositions();
+    });
 
-  // Setup refresh subscription
-  refresh$.subscribe(async () => {
-    await drawPositions();
-  });
-
-  // Setup periodic refreshes
-  state.refreshIntervalId = setInterval(() => refresh$.next(), REFRESH_RATE);
   attachEventListeners();
 };
 
@@ -43,18 +38,13 @@ export const render = async () => {
  * Pauses component updates
  */
 export const pause = () => {
-  clearInterval(state.refreshIntervalId);
-  state.refreshIntervalId = null;
+  pauseRefresh$.next();
 };
 
 /**
  * Attaches all required event listeners
  */
-const attachEventListeners = () => {
-  // Back button
-  const backButton = document.querySelector(".btn-back");
-  backButton.addEventListener("click", () => window.history.back());
-};
+const attachEventListeners = () => {};
 
 /**
  * Print a list of updated train positions to the provided container

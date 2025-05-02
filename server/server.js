@@ -71,7 +71,7 @@ app.get("/api/routes", async (req, res) => {
       throw new Error("Route information is missing or empty");
     }
 
-    return Response.OK(res, data);
+    return Response.OK(res, routes);
   } catch (error) {
     return Response.Error(res, 500, error.message);
   }
@@ -97,6 +97,7 @@ app.get("/api/trains", async (req, res) => {
   }
 });
 
+// TODO: maybe add another static data file for lines? Need to return some more data
 app.get("/api/lines", async (req, res) => {
   console.log("fetching lines...");
 

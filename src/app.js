@@ -1,13 +1,14 @@
 import "./styles/map.css";
+import "./styles.css";
 
-import { state$ } from "./state.js";
-import { metroSystem } from "./system.js";
+import { state$ } from "./helpers/state.js";
+import { metroSystem } from "./helpers/system.js";
 
-import { render as renderHome } from "./components/home.js";
-import { pause as pauseMap, render as renderMap } from "./components/map.js";
-import { render as renderStations } from "./components/stations.js";
-import { render as renderLines } from "./components/lines.js";
-import { pause as pauseTrains, render as renderTrains } from "./components/trains.js";
+import { render as renderHome } from "./views/home.js";
+import { pause as pauseMap, render as renderMap } from "./views/map.js";
+import { render as renderStations } from "./views/stations.js";
+import { render as renderLines } from "./views/lines.js";
+import { pause as pauseTrains, render as renderTrains } from "./views/trains.js";
 
 const views = {
   "home": { render: renderHome },
@@ -30,6 +31,11 @@ const main = () => {
         currentView.pause();
       }
 
+      // Show/hide back button
+      const backButton = document.querySelector(".btn-back");
+      backButton.removeAttribute("hidden");
+      state.viewId === "home" ? backButton.setAttribute("hidden", true) : backButton.removeAttribute("hidden");
+
       // Render new view
       await newView.render();
       currentViewId = state.viewId;
@@ -43,7 +49,9 @@ const main = () => {
   // Set default view
   state$.next({ viewId: "home" });
 
-  // Handle browser back button
+  // Handle back button
+  const backButton = document.querySelector(".btn-back");
+  backButton.addEventListener("click", () => window.history.back());
   window.onpopstate = (event) => {
     if (event.state) {
       state$.next(event.state);

@@ -1,0 +1,74 @@
+/* ========================== */
+/*          VARIABLES         */
+/* ========================== */
+
+:root {
+  --color-header: #0b0500;
+  --color-footer: #0b0500;
+  --color-background: #0b0500;
+  --color-text-dark: black;
+  --color-text-light: #faf9f6;
+  --border-radius: 0.5rem;
+}
+
+/* ========================== */
+/*      GENERAL STYLES        */
+/* ========================== */
+
+body {
+  font-family: "Helvetica Neue", -apple-system, sans-serif;
+  color: var(--color-text-light);
+  background-color: var(--color-background);
+  margin: 0;
+  padding: 2rem;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  display: flex;
+  flex-flow: column;
+  padding: 0;
+}
+
+button {
+  background-color: white;
+  border-radius: var(--border-radius);
+  padding: 0.5rem 1rem;
+  font-size: 1.25rem;
+  border: none;
+  text-transform: uppercase;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* ========================== */
+/*        HEADER & NAV        */
+/* ========================== */
+
+header {
+  display: flex;
+  flex-flow: row;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  color: var(--color-text-light);
+}
+
+header h1 {
+  color: var(--color-text-light);
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+/* ========================== */
+/*         OTHER STYLES       */
+/* ========================== */
+
+@media screen and (max-width: 668px) {
+}

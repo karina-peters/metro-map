@@ -1,9 +1,9 @@
-import { metroSystem } from "../system.js";
+import { metroSystem } from "../helpers/system.js";
+
+const headingText = "Stations";
 
 const template = () => {
   return `
-      <button class="btn-back">Back</button>
-      <h1>Hello, Stations</h1>
       <div class=content-wrapper></div>
     `;
 };
@@ -14,8 +14,12 @@ const template = () => {
 })();
 
 export const render = async () => {
+  // Render heading
+  const textElement = document.querySelector(".header-target .heading-text");
+  textElement.textContent = headingText;
+
   // Render main template
-  const container = document.querySelector(".container");
+  const container = document.querySelector(".content-target");
   container.innerHTML = template();
 
   // Draw async content
@@ -27,11 +31,7 @@ export const render = async () => {
 /**
  * Attaches all required event listeners
  */
-const attachEventListeners = () => {
-  // Back button
-  const backButton = document.querySelector(".btn-back");
-  backButton.addEventListener("click", () => window.history.back());
-};
+const attachEventListeners = () => {};
 
 /**
  * Draw list of station names and codes

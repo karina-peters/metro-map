@@ -1,15 +1,14 @@
-import { navigateTo } from "../state.js";
+import { navigateTo } from "../helpers/state.js";
 
+const headingText = "Home";
 const template = () => {
   return `
-  <main>
     <div class="button-wrapper">
-        <button id="btn-map">Map</button>
-        <button id="btn-stn">Stations</button>
-        <button id="btn-line">Lines</button>
-        <button id="btn-train">Trains</button>
+      <button id="btn-map">Map</button>
+      <button id="btn-stn">Stations</button>
+      <button id="btn-line">Lines</button>
+      <button id="btn-train">Trains</button>
     </div>
-  </main>
   `;
 };
 
@@ -19,8 +18,12 @@ const template = () => {
 })();
 
 export const render = () => {
+  // Render heading text
+  const textElement = document.querySelector(".header-target .heading-text");
+  textElement.textContent = headingText;
+
   // Render template
-  const container = document.querySelector(".container");
+  const container = document.querySelector(".content-target");
   container.innerHTML = template();
 
   attachEventListeners();
