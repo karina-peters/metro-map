@@ -12,7 +12,7 @@ class SystemService {
     this.dataLoaded = false;
 
     this.stnCodeToName = new Map(); // Map<string, string>
-    this.cktListCache = new Map(); // Map<string, Map<string, Array< string>>
+    this.cktListCache = new Map(); // Map<string, Map<string, Array<string>>
   }
 
   async init() {
@@ -25,16 +25,42 @@ class SystemService {
     if (!this.dataLoaded) await this.dataPromise;
 
     const name = this.stnCodeToName.get(code);
-    if (!name) throw new Error("Code not found");
+    if (!name) {
+      throw new Error("Code not found");
+    }
 
     return name;
+  }
+
+  async getNextStationCkt(cktId, lineCode, lineNum) {
+    if (!this.dataLoaded) await this.dataPromise;
+
+    const entries = this.cktListCache.get(REGIONS.ALL);
+    const lineId = this.getLineId(lineCode, lineNum);
+    const circuits = entries.get(lineId);
+
+    const currentCkt = circuits.find((c) => c.id === cktId);
+    if (!currentCkt) {
+      console.warn(`Circuit [${cktId}] is undefined`);
+      return null;
+    }
+
+    // TODO: handle circuits beyond terminal station
+    const nextStnCkt = circuits.find((c) => c.seqNum >= currentCkt.seqNum && c.stnCode !== null);
+    if (!nextStnCkt) {
+      throw new Error("Station not found");
+    }
+
+    return nextStnCkt;
   }
 
   async getCircuits(regionId) {
     if (!this.dataLoaded) await this.dataPromise;
 
     const circuits = this.cktListCache.get(regionId);
-    if (!circuits) throw new Error("Code not found");
+    if (!circuits) {
+      throw new Error("Code not found");
+    }
 
     return Array.from(circuits.entries().map(([key, value]) => ({ lineId: key, circuits: value })));
   }
@@ -45,7 +71,9 @@ class SystemService {
       headers: { "Content-Type": "application/json" },
     });
 
-    if (!response.ok) throw new Error(response.statusText);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
 
     return await response.json().then((r) => r.data);
   }
@@ -56,7 +84,9 @@ class SystemService {
       headers: { "Content-Type": "application/json" },
     });
 
-    if (!response.ok) throw new Error(response.statusText);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
 
     return await response.json().then((r) => r.data);
   }
@@ -68,7 +98,9 @@ class SystemService {
       headers: { "Content-Type": "application/json" },
     });
 
-    if (!response.ok) throw new Error(response.statusText);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
 
     return await response.json().then((r) => r.data);
   }
@@ -79,9 +111,11 @@ class SystemService {
       headers: { "Content-Type": "application/json" },
     });
 
-    if (!response.ok) throw new Error(response.statusText);
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
 
-    return await response.json().then((r) => r.data);
+    return await response.json().then((r) => r.data.filter((t) => t.DestinationStationCode !== null).sort((a, b) => a.TrainId - b.TrainId));
   }
 
   async _loadStationNames() {

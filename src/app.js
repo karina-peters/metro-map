@@ -1,4 +1,5 @@
 import "./styles/map.css";
+import "./styles/trains.css";
 import "./styles.css";
 
 import { state$ } from "./helpers/state.js";

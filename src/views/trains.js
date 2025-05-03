@@ -1,21 +1,30 @@
-import { Subject, takeUntil, timer } from "rxjs";
+import { Subject, takeUntil, merge, timer } from "rxjs";
 import p5 from "p5";
 
 import { metroSystem, REFRESH_RATE } from "../helpers/system.js";
 import DotMatrixSketch from "../components/dotMatrixSketch.js";
 
-const pauseRefresh$ = new Subject();
 const headingText = "Trains";
+
+const manualRefresh$ = new Subject();
+const pauseRefresh$ = new Subject();
+const timer$ = timer(0, REFRESH_RATE).pipe(takeUntil(pauseRefresh$));
+
+let trainPositions = [];
+let selectedId = "";
 
 const template = () => {
   return `
-    <div class=content-wrapper></div>
+    <div class="train-label"></div>
+    <div class="board-target"></div>
+    <div class="list-target"></div>
   `;
 };
 
-(() => {
+(async () => {
   // Fetch data
-  // Handle state/routing
+  trainPositions = await metroSystem.fetchTrainPositions();
+  selectedId = trainPositions[0].TrainId; // trainPositions.find((t) => t.SecondsAtLocation <= 240).TrainId; // trainPositions[0].TrainId; // trainPositions.find((t) => t.LineCode === "GR").TrainId;
 })();
 
 export const render = async () => {
@@ -27,14 +36,11 @@ export const render = async () => {
   const container = document.querySelector(".content-target");
   container.innerHTML = template();
 
-  drawDotDisplay(["destination greenbelt"]);
-
   // Refresh content
-  // timer(0, REFRESH_RATE)
-  //   .pipe(takeUntil(pauseRefresh$))
-  //   .subscribe(async () => {
-  //     // await drawPositions();
-  //   });
+  timer$.subscribe(async () => (trainPositions = await metroSystem.fetchTrainPositions()));
+
+  await drawTrainSign();
+  await drawTrainList();
 
   attachEventListeners();
 };
@@ -49,51 +55,90 @@ export const pause = () => {
 /**
  * Attaches all required event listeners
  */
-const attachEventListeners = () => {};
-
-const drawDotDisplay = (textArray) => {
-  const container = document.querySelector(".content-wrapper");
-
-  // Draw chart with p5.js
-  const dotMatrix = new DotMatrixSketch(textArray);
-  new p5(dotMatrix.sketch, container);
+const attachEventListeners = () => {
+  // TODO: select train from list
 };
 
-/**
- * Print a list of updated train positions to the provided container
- */
-const drawPositions = async () => {
+const drawTrainSign = async () => {
   try {
-    const positionData = await metroSystem.fetchTrainPositions();
-    const outputList = await formatTrainPositions(positionData);
+    const boardTarget = document.querySelector(".board-target");
+    let selectedTrain = trainPositions.find((t) => t.TrainId === selectedId);
+    let msgArray = await getCurrentMsgList(selectedTrain);
 
-    const container = document.querySelector(".content-wrapper");
-    container.innerHTML = `
-    <ul class="metro-trains">
-        ${outputList.map((train) => `<li>${train}</li>`).join("")}
-    </ul>
-    `;
+    // Draw board with p5.js
+    const dotMatrix = new DotMatrixSketch(msgArray, selectedTrain?.LineCode, selectedTrain?.trainId, boardTarget);
+    new p5(dotMatrix.sketch, boardTarget);
+
+    // Update messages for selected train
+    merge(timer$, manualRefresh$).subscribe(async () => {
+      const labelTarget = document.querySelector(".train-label");
+      labelTarget.textContent = `Train ${selectedId}`;
+
+      selectedTrain = trainPositions.find((t) => t.TrainId === selectedId);
+      msgArray = await getCurrentMsgList(selectedTrain);
+      dotMatrix.data$.next({ msgArray, lineId: selectedTrain?.LineCode, trainId: selectedTrain?.TrainId });
+    });
   } catch (error) {
-    console.error("Failed to draw train positions:", error);
-    const container = document.querySelector(".content-wrapper");
+    console.error("Failed to draw train board:", error);
+    const container = document.querySelector(".board-target");
+    container.innerHTML = `<div class="error">Failed to load position data</div>`;
+  }
+};
+
+const drawTrainList = async () => {
+  try {
+    const listTarget = document.querySelector(".list-target");
+
+    timer$.subscribe(async () => {
+      listTarget.innerHTML = "";
+
+      // Draw a button for each train
+      trainPositions.map((train) => {
+        const button = document.createElement("button");
+        button.classList.add("btn-dark", "btn-train");
+        button.textContent = train.TrainId;
+        button.value = train.TrainId;
+
+        button.addEventListener("click", (event) => {
+          selectedId = event.currentTarget.value;
+          manualRefresh$.next();
+        });
+
+        listTarget.appendChild(button);
+      });
+    });
+  } catch (error) {
+    console.error("Failed to draw train list:", error);
+    const container = document.querySelector(".list-target");
     container.innerHTML = `<div class="error">Failed to load position data</div>`;
   }
 };
 
 /**
- * Format train positions for display
- * @param {Array} trainPositions - Array of train position objects
- * @returns {Promise<Array<string>>} Formatted list of train positions
+ * Constructs a list of messages based on the position and destination of the train with the provided id
+ * @param {string} trainId train to display
+ * @returns an Array of message strings
  */
-const formatTrainPositions = async (trainPositions) => {
-  return Promise.all(
-    trainPositions
-      .filter(({ LineCode }) => LineCode !== null)
-      .map(async ({ TrainId, LineCode, DirectionNum, CircuitId, DestinationStationCode }) => {
-        const lineId = metroSystem.getLineId(LineCode, DirectionNum);
+const getCurrentMsgList = async (train) => {
+  const msgArray = [];
+  if (!train) {
+    return null;
+  }
 
-        const destination = await metroSystem.getStationName(DestinationStationCode);
-        return `${TrainId} (${lineId}, DEST: ${destination}): ${CircuitId}`;
-      })
-  );
+  const destStation = await metroSystem.getStationName(train.DestinationStationCode);
+  if (destStation) {
+    msgArray.push("Destination", `${destStation}`);
+  }
+
+  const nextStnCkt = await metroSystem.getNextStationCkt(train.CircuitId, train.LineCode, train.DirectionNum);
+  if (nextStnCkt) {
+    const stationName = await metroSystem.getStationName(nextStnCkt.stnCode);
+    const posPhrase = nextStnCkt.id === train.CircuitId ? "This is" : "Next stop is";
+
+    msgArray.push(posPhrase, stationName);
+  } else {
+    msgArray.push("Position unknown");
+  }
+
+  return msgArray;
 };

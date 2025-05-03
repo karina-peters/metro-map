@@ -40,6 +40,20 @@ button {
   border: none;
   text-transform: uppercase;
 }
+button:hover {
+  background-color: #eee;
+}
+
+.btn-dark {
+  background-color: #222;
+  color: var(--color-text-light);
+}
+.btn-dark:hover {
+  background-color: #333;
+}
+.btn-dark.selected {
+  background-color: var(--color-background);
+}
 
 [hidden] {
   display: none !important;

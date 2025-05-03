@@ -1,0 +1,24 @@
+.content-target {
+  margin: 2rem 0;
+}
+
+.list-target {
+  display: flex;
+  flex-flow: row wrap;
+  padding: 1rem;
+  gap: 0.5rem;
+  margin: 2rem 0;
+  align-items: center;
+}
+
+.btn-train {
+  cursor: pointer;
+  width: 4rem;
+}
+
+.train-label {
+  margin: 1rem 0;
+  font-size: 1.5rem;
+  text-transform: uppercase;
+  align-self: flex-end;
+}
