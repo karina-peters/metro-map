@@ -7,9 +7,14 @@ export const lineColor = {
   BL: "#3772FF",
 };
 
-export const backgroundColor = "#0B0500";
+export const backgroundColor = "black";
 
 export const textColor = {
   dark: "black",
   light: "white",
+};
+
+export const dotColor = {
+  on: "#E49B09",
+  off: "#111111",
 };

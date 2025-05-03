@@ -5,7 +5,7 @@
 :root {
   --color-header: #0b0500;
   --color-footer: #0b0500;
-  --color-background: #0b0500;
+  --color-background: black;
   --color-text-dark: black;
   --color-text-light: #faf9f6;
   --border-radius: 0.5rem;

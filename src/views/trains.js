@@ -1,5 +1,8 @@
-import { metroSystem, REFRESH_RATE } from "../helpers/system.js";
 import { Subject, takeUntil, timer } from "rxjs";
+import p5 from "p5";
+
+import { metroSystem, REFRESH_RATE } from "../helpers/system.js";
+import DotMatrixSketch from "../components/dotMatrixSketch.js";
 
 const pauseRefresh$ = new Subject();
 const headingText = "Trains";
@@ -24,12 +27,14 @@ export const render = async () => {
   const container = document.querySelector(".content-target");
   container.innerHTML = template();
 
+  drawDotDisplay(["destination greenbelt"]);
+
   // Refresh content
-  timer(0, REFRESH_RATE)
-    .pipe(takeUntil(pauseRefresh$))
-    .subscribe(async () => {
-      await drawPositions();
-    });
+  // timer(0, REFRESH_RATE)
+  //   .pipe(takeUntil(pauseRefresh$))
+  //   .subscribe(async () => {
+  //     // await drawPositions();
+  //   });
 
   attachEventListeners();
 };
@@ -45,6 +50,14 @@ export const pause = () => {
  * Attaches all required event listeners
  */
 const attachEventListeners = () => {};
+
+const drawDotDisplay = (textArray) => {
+  const container = document.querySelector(".content-wrapper");
+
+  // Draw chart with p5.js
+  const dotMatrix = new DotMatrixSketch(textArray);
+  new p5(dotMatrix.sketch, container);
+};
 
 /**
  * Print a list of updated train positions to the provided container
