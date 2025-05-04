@@ -1,8 +1,11 @@
+import { BehaviorSubject, timer, interval } from "rxjs";
+
 import { backgroundColor, dotColor, lineColor } from "../helpers/colors.js";
 import { fontData } from "../helpers/dotFont.js";
-import { BehaviorSubject, timer } from "rxjs";
 
-const pauseDuration = 4000;
+const pauseDuration = 3000;
+const scrollPause = 2000;
+const scrollSpeed = 50;
 
 const dotRadius = 4;
 const dotGap = 2;
@@ -12,40 +15,49 @@ const dotUnit = dotRadius * 2 + dotGap;
 const charGap = 1;
 const charWidth = fontData[0][0].length;
 const charHeight = fontData[0].length;
-const paddingX = 5;
+const paddingX = 2;
 const paddingY = 4;
 const numRows = charHeight + 2 * paddingY;
-const highlightWidth = 3;
+const highlightWidth = 4;
 
 class DotMatrixSketch {
   /**
-   *
-   * @param {Array<string>} msgArray List of messages to loop through
-   * @param {string} lineId Line id for the color
-   * @param {string} trainId Train id to track changes
+   * Create new DotMatrixSketch instance
+   * @param {Array<string>} msgArray - List of messages to loop through
+   * @param {string} lineId - Line id for the color
+   * @param {string} trainId - Train id to track changes
    */
   constructor(msgArray, lineId, trainId, parentElt) {
+    // Data
     this.data$ = new BehaviorSubject({ msgArray, lineId, trainId });
     this.msgArray = msgArray;
     this.trainId = trainId;
     this.highlightColor = lineColor[lineId];
     this.currentMsgIndex = 0;
-    this.timerSubscription = null;
 
+    // Board State
+    this.timer$ = null;
+    this.scroll$ = null;
+    this.scrollOffset = 0;
+    this.isScrolling = false;
+    this.scrollStep = 1;
+
+    // Sizing
     this.parentElt = parentElt;
-    this.numCols = Math.floor(this.parentElt.clientWidth / dotUnit);
+    this.numCols = 0;
     this.breakpoint = 600;
 
     this.setCanvasSize();
   }
 
   setCanvasSize = () => {
-    // Handle breakpoints
+    // TODO - Handle breakpoints
     if (window.innerWidth < this.breakpoint) {
     } else {
     }
 
-    // Calculate dimensions
+    this.numCols = Math.floor(this.parentElt.clientWidth / dotUnit);
+
     const width = this.numCols * dotUnit - dotGap;
     const height = numRows * dotUnit - dotGap;
 
@@ -69,23 +81,24 @@ class DotMatrixSketch {
       };
 
       self.data$.subscribe(({ msgArray, lineId, trainId }) => {
-        // Update internal state
+        if (this.isScrolling) {
+          console.log("scrolling...data update skipped");
+          return;
+        }
+
         self.msgArray = msgArray;
         self.highlightColor = lineColor[lineId];
 
         // If new train id, reset and start new timer
         if (trainId !== self.trainId) {
-          console.log(`Train ID changed from ${self.trainId} to ${trainId}`);
           self.trainId = trainId;
           self.currentMsgIndex = 0;
 
-          // Cancel existing timer subscription if it exists
-          if (self.timerSubscription) {
-            self.timerSubscription.unsubscribe();
+          if (self.timer$) {
+            self.timer$.unsubscribe();
           }
 
-          // Force redraw immediately
-          self.startMessageTimer(p);
+          self.startMsgTimer(p);
         }
       });
 
@@ -98,31 +111,84 @@ class DotMatrixSketch {
       p.noFill();
 
       // Start the message timer
-      self.startMessageTimer(p);
+      self.startMsgTimer(p);
 
       console.log("DotMatrixSketch: p5.js draw function executed!");
     };
   };
 
-  startMessageTimer = (p) => {
-    // Clear existing subscription
-    if (this.timerSubscription) {
-      this.timerSubscription.unsubscribe();
+  /**
+   * Start or restart the message display timer
+   * Handles static and scrolling display based on message length
+   * @param {Object} p - p5.js instance
+   */
+  startMsgTimer = (p) => {
+    if (this.timer$) {
+      this.timer$.unsubscribe();
     }
 
-    // Draw initial state
+    this.scrollOffset = 0;
+    this.isScrolling = false;
+
     this.drawBoard(p);
     this.drawMessage(p);
 
-    // Set up timer for subsequent updates
-    this.timerSubscription = timer(pauseDuration, pauseDuration).subscribe(() => {
-      this.currentMsgIndex = (this.currentMsgIndex + 1) % this.msgArray.length;
+    const currentMsg = this.msgArray[this.currentMsgIndex];
+    if (this.isMsgOverflow(currentMsg)) {
+      const msgWidth = this.getMsgLength(currentMsg);
+
+      // Message overflow - pause, then start scroll
+      this.timer$ = timer(scrollPause).subscribe(() => {
+        this.startScroll(p, msgWidth);
+      });
+    } else {
+      // Message fits - cycle through as usual
+      this.timer$ = timer(pauseDuration).subscribe(() => {
+        this.nextMessage(p);
+      });
+    }
+  };
+
+  /**
+   * Start scrolling animation for a message that doesn't fit on the display
+   * @param {Object} p - p5.js instance
+   * @param {number} msgWidth - Message width in number of dots
+   */
+  startScroll = (p, msgWidth) => {
+    this.isScrolling = true;
+    const scrollDistance = msgWidth + highlightWidth + 2 * paddingX;
+
+    this.scroll$ = interval(scrollSpeed).subscribe(() => {
+      this.scrollOffset += this.scrollStep;
+
       p.background(backgroundColor);
       this.drawBoard(p);
       this.drawMessage(p);
+
+      if (this.scrollOffset >= scrollDistance) {
+        this.scroll$.unsubscribe();
+        this.nextMessage(p);
+      }
     });
   };
 
+  /**
+   * Move to the next message in the list
+   * @param {Object} p - p5.js instance
+   */
+  nextMessage = (p) => {
+    this.scrollOffset = 0;
+    this.isScrolling = false;
+    this.currentMsgIndex = (this.currentMsgIndex + 1) % this.msgArray.length;
+
+    this.clearSubscriptions();
+    this.startMsgTimer(p);
+  };
+
+  /**
+   * Draw the dot matrix board background with highlight color
+   * @param {object} p - p5.js instance
+   */
   drawBoard = (p) => {
     let dotX = dotRadius;
     let dotY = dotRadius;
@@ -143,30 +209,48 @@ class DotMatrixSketch {
     }
   };
 
+  /**
+   * Draw the current message on the dot matrix board
+   * Handles regular display and scrolling behavior
+   * @param {object} p - p5.js instance
+   */
   drawMessage = (p) => {
     let { startX, startY } = this.calcStartPos();
 
+    if (this.isScrolling) {
+      startX -= this.scrollOffset * dotUnit;
+    }
+
     let msgWidth = 0;
     for (const char of this.msgArray[this.currentMsgIndex]) {
-      // Render visible characters
-      if (msgWidth > -charWidth && msgWidth < this.numCols) {
-        this.renderChar(p, char, startX, startY);
-      }
+      const charStartX = startX + msgWidth;
 
-      msgWidth += charWidth + charGap;
-      startX += dotUnit * (charWidth + charGap);
+      this.renderChar(p, char, charStartX, startY);
+
+      msgWidth += dotUnit * (charWidth + charGap);
     }
   };
 
+  /**
+   * Render a single character on the dot matrix display
+   * Only renders dots within the visible display area
+   * @param {Object} p - p5.js instance
+   * @param {string} char - Character to render
+   * @param {number} startX - Starting X position in pixels
+   * @param {number} startY - Starting Y position in pixels
+   */
   renderChar = (p, char, startX, startY) => {
     const charMatrix = fontData[char.toUpperCase()] || fontData[" "]; // Default to space if character not found
     let dotY = startY;
 
     for (const row of charMatrix) {
+      const scrollStart = (highlightWidth + paddingX) * dotUnit;
+      const scrollEnd = (this.numCols - paddingX) * dotUnit - dotGap;
+
       let dotX = startX;
 
       for (const dotVal of row) {
-        if (dotVal === 1) {
+        if (dotVal === 1 && dotX >= scrollStart && dotX <= scrollEnd) {
           p.fill(dotColor.on);
           p.ellipseMode(p.RADIUS);
           p.ellipse(dotX, dotY, dotRadius, dotRadius);
@@ -179,26 +263,61 @@ class DotMatrixSketch {
     }
   };
 
+  /**
+   * Calculate the starting position for drawing the message
+   * Centers short messages and positions overflow messages for scrolling
+   * @returns {Object} Object containing startX and startY coordinates in pixels
+   */
   calcStartPos = () => {
-    let msgColCount = this.msgArray[this.currentMsgIndex].length * (charWidth + charGap) - charGap;
+    const message = this.msgArray[this.currentMsgIndex];
 
-    let startX = dotRadius + (highlightWidth + 2) * dotUnit;
+    let startX = dotRadius + highlightWidth * dotUnit;
     let startY = dotUnit * paddingY + dotRadius;
-    if (msgColCount < this.numCols) {
-      // Center the message if it fits
-      startX += Math.floor((this.numCols - msgColCount) / 2) * dotUnit;
+    let msgLength = this.getMsgLength(message);
+
+    if (!this.isMsgOverflow(message)) {
+      startX += Math.floor((this.numCols - highlightWidth - msgLength) / 2) * dotUnit; // Center align
     } else {
-      // Left align with padding if not
-      startX += paddingX * dotUnit;
+      startX += paddingX * dotUnit; // Left align with padding
     }
 
     return { startX, startY };
   };
 
-  cleanup = () => {
-    if (this.timerSubscription) {
-      this.timerSubscription.unsubscribe();
-      this.timerSubscription = null;
+  /**
+   * Calculate the length of a message in number of dots
+   * @param {string} message - The message to measure
+   * @returns {number} Length of the message in dot matrix columns
+   */
+  getMsgLength = (message) => {
+    return message.length * (charWidth + charGap) - charGap;
+  };
+
+  /**
+   * Check if a message is too long to fit on the display
+   * @param {string} message - The message to check
+   * @returns {boolean} True if the message needs to scroll, false otherwise
+   */
+  isMsgOverflow = (message) => {
+    const msgWidth = this.getMsgLength(message);
+    const visibleWidth = this.numCols - highlightWidth - paddingX * 2;
+
+    return msgWidth > visibleWidth;
+  };
+
+  /**
+   * Clean up all active subscriptions
+   * Should be called when component unmounts or before starting new animations
+   */
+  clearSubscriptions = () => {
+    if (this.timer$) {
+      this.timer$.unsubscribe();
+      this.timer$ = null;
+    }
+
+    if (this.scroll$) {
+      this.scroll$.unsubscribe();
+      this.scroll$ = null;
     }
   };
 }
