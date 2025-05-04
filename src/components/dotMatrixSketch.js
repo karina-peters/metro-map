@@ -1,17 +1,35 @@
-import { BehaviorSubject, timer, interval } from "rxjs";
+import {
+  timer,
+  interval,
+  takeWhile,
+  tap,
+  switchMap,
+  finalize,
+  Subject,
+  takeUntil,
+  of,
+  take,
+  delay,
+  distinctUntilChanged,
+  iif,
+  last,
+} from "rxjs";
 
 import { backgroundColor, dotColor, lineColor } from "../helpers/colors.js";
 import { fontData } from "../helpers/dotFont.js";
 
-const pauseDuration = 3000;
-const scrollPause = 2000;
+// Timing (ms)
+const pauseDuration = 2500;
+const scrollPause = 1500;
 const scrollSpeed = 50;
+const transitionDelay = 200;
 
+// Sizing (px)
 const dotRadius = 4;
 const dotGap = 2;
 const dotUnit = dotRadius * 2 + dotGap;
 
-// Dot counts
+// Dimensions (dot count)
 const charGap = 1;
 const charWidth = fontData[0][0].length;
 const charHeight = fontData[0].length;
@@ -19,6 +37,10 @@ const paddingX = 2;
 const paddingY = 4;
 const numRows = charHeight + 2 * paddingY;
 const bumperWidth = 4;
+const scrollStep = 1;
+
+// Other
+const defaultMsgIndex = 0;
 
 class DotMatrixSketch {
   /**
@@ -28,19 +50,25 @@ class DotMatrixSketch {
    * @param {string} trainId - Train id to track changes
    */
   constructor(msgArray, lineId, trainId, parentElt) {
+    // Component State
+    this.destroy$ = new Subject();
+    this.isDestroyed = false;
+
     // Data
-    this.data$ = new BehaviorSubject({ msgArray, lineId, trainId });
+    this.data$ = new Subject({ msgArray, lineId, trainId });
     this.msgArray = msgArray;
-    this.trainId = trainId;
+    this.currentMsgIndex = defaultMsgIndex;
+    this.currentMsg = null;
+    this.trainId = null;
     this.bumperColor = lineId && Object.hasOwn(lineColor, lineId) ? lineColor[lineId] : dotColor.off;
-    this.currentMsgIndex = 0;
 
     // Board State
     this.timer$ = null;
-    this.scroll$ = null;
     this.scrollOffset = 0;
     this.isScrolling = false;
-    this.scrollStep = 1;
+    this.transitionOffset = 0;
+    this.isInTransition = true;
+    this.transitionPhase = null;
 
     // Sizing
     this.parentElt = parentElt;
@@ -80,29 +108,33 @@ class DotMatrixSketch {
         p.redraw();
       };
 
-      self.data$.subscribe(({ msgArray, lineId, trainId }) => {
-        if (this.isScrolling && trainId === self.trainId) {
-          console.log("scrolling...data update skipped");
-          return;
-        }
+      // Start the message timer
+      this.data$
+        .pipe(
+          takeUntil(this.destroy$),
+          tap(({ msgArray }) => {
+            // Update array with new messages
+            console.log("updating message array");
+            this.msgArray = msgArray;
+          }),
+          distinctUntilChanged((prev, curr) => prev.trainId === curr.trainId),
+          switchMap(({ trainId, lineId }) => {
+            // Start transition for newly selected train
+            return this.doTransition$(p, trainId, lineId).pipe(
+              delay(transitionDelay),
+              tap(() => this.startMsgTimer(p))
+            );
+          })
+        )
+        .subscribe();
 
-        self.msgArray = msgArray;
-        self.bumperColor = lineId && Object.hasOwn(lineColor, lineId) ? lineColor[lineId] : dotColor.off;
-
-        // If new train id, reset and start new timer
-        if (trainId !== self.trainId) {
-          self.trainId = trainId;
-          self.currentMsgIndex = 0;
-
-          if (self.timer$) {
-            self.timer$.unsubscribe();
-          }
-
-          self.startMsgTimer(p);
-        }
+      // Handle component destruction
+      self.destroy$.subscribe(() => {
+        console.log("destroying...");
+        this.isDestroyed = true;
       });
 
-      console.log("DotMatrixSketch: p5.js setup function executed!");
+      // console.log("DotMatrixSketch: p5.js setup function executed!");
     };
 
     p.draw = () => {
@@ -110,10 +142,14 @@ class DotMatrixSketch {
       p.background(backgroundColor);
       p.noFill();
 
-      // Start the message timer
-      self.startMsgTimer(p);
+      // Draw the current state
+      this.drawBoard(p);
 
-      console.log("DotMatrixSketch: p5.js draw function executed!");
+      if (!this.isInTransition) {
+        this.drawMessage(p);
+      }
+
+      // console.log("DotMatrixSketch: p5.js draw function executed!");
     };
   };
 
@@ -123,53 +159,139 @@ class DotMatrixSketch {
    * @param {Object} p - p5.js instance
    */
   startMsgTimer = (p) => {
-    if (this.timer$) {
-      this.timer$.unsubscribe();
-    }
+    this.clearSubscriptions();
 
     this.scrollOffset = 0;
     this.isScrolling = false;
 
-    this.drawBoard(p);
-    this.drawMessage(p);
+    p.redraw();
 
-    const currentMsg = this.msgArray[this.currentMsgIndex];
-    if (this.isMsgOverflow(currentMsg)) {
-      const msgWidth = this.getMsgLength(currentMsg);
+    const needsScroll = this.isMsgOverflow(this.currentMsg);
+    const timerDelay = needsScroll ? scrollPause : pauseDuration;
 
-      // Message overflow - pause, then start scroll
-      this.timer$ = timer(scrollPause).subscribe(() => {
-        this.startScroll(p, msgWidth);
-      });
-    } else {
-      // Message fits - cycle through as usual
-      this.timer$ = timer(pauseDuration).subscribe(() => {
-        this.nextMessage(p);
-      });
-    }
+    this.timer$ = timer(timerDelay)
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap(() =>
+          // Scroll message if overflowing
+          iif(() => this.isMsgOverflow(this.currentMsg), this.scrollMessage$(p), of(null))
+        ),
+        takeWhile(() => !this.isInTransition),
+        finalize(() => {
+          if (!this.isInTransition && !this.isDestroyed) {
+            this.nextMessage(p);
+          }
+        })
+      )
+      .subscribe();
+  };
+
+  /**
+   * Starts transition animation for newly selected train
+   * @param {Object} p - p5.js instance
+   * @param {string} newTrainId - Train id of the newly selected train
+   * @param {string} newLineId - Line id of the newly selected train
+   * @returns an Observable of the transition animation
+   */
+  doTransition$ = (p, newTrainId, newLineId) => {
+    console.log("starting transition");
+    this.isInTransition = true;
+    this.clearSubscriptions();
+
+    return of(null).pipe(
+      takeUntil(this.destroy$),
+      switchMap(() =>
+        // Skip exit animation if no train selected
+        iif(() => this.trainId === null, of(null), this.animateBumpers$(p, "out"))
+      ),
+      tap(() => {
+        console.log("changing to", newTrainId);
+        this.transitionPhase = "change";
+
+        this.bumperColor = newLineId && Object.hasOwn(lineColor, newLineId) ? lineColor[newLineId] : dotColor.off;
+        this.trainId = newTrainId;
+        this.currentMsg = this.msgArray[defaultMsgIndex];
+      }),
+      delay(transitionDelay),
+      switchMap(() => this.animateBumpers$(p, "in")),
+      finalize(() => {
+        console.log("finalizing transition");
+        this.transitionOffset = 0;
+        this.isInTransition = false;
+      })
+    );
   };
 
   /**
    * Start scrolling animation for a message that doesn't fit on the display
    * @param {Object} p - p5.js instance
-   * @param {number} msgWidth - Message width in number of dots
    */
-  startScroll = (p, msgWidth) => {
-    this.isScrolling = true;
-    const scrollDistance = msgWidth + bumperWidth + 2 * paddingX;
+  scrollMessage$ = (p) => {
+    console.log("scrolling...");
 
-    this.scroll$ = interval(scrollSpeed).subscribe(() => {
-      this.scrollOffset += this.scrollStep;
-
-      p.background(backgroundColor);
-      this.drawBoard(p);
-      this.drawMessage(p);
-
-      if (this.scrollOffset >= scrollDistance) {
-        this.scroll$.unsubscribe();
-        this.nextMessage(p);
-      }
+    return this.createScrollAnimation(p, {
+      totalDistance: this.getMsgLength(this.currentMsg) + bumperWidth + 2 * paddingX,
+      onStart: () => {
+        this.isScrolling = true;
+      },
+      onStep: () => {
+        this.scrollOffset += scrollStep;
+      },
+      onFinalize: () => {
+        this.scrollOffset = 0;
+        this.isScrolling = false;
+      },
     });
+  };
+
+  /**
+   * Start bumper transition animation
+   * @param {Object} p - p5.js instance
+   * @param {string} phase - Transition phase (in, out)
+   * @returns
+   */
+  animateBumpers$ = (p, phase) => {
+    console.log("animating bumpers...");
+
+    return this.createScrollAnimation(p, {
+      totalDistance: bumperWidth,
+      onStart: () => {
+        this.transitionPhase = phase;
+      },
+      onStep: () => {
+        this.transitionOffset += scrollStep;
+      },
+      onFinalize: () => {
+        this.transitionOffset = 0;
+      },
+    });
+  };
+
+  /**
+   * Generalized offset animation for scroll or bumper transition
+   * (modified from consolidation of previous redundant startScroll and startBumperAnimation functions by ChatGPT)
+   * @param {Object} p - p5.js instance
+   * @param {Object} options
+   * @param {number} options.totalDistance - Total distance to scroll
+   * @param {Function} options.onStep - Called each tick to update offset
+   * @param {Function} options.onFinalize - Called once when animation completes
+   * @param {Function} [options.onStart] - Optional setup at animation start
+   */
+  createScrollAnimation = (p, { totalDistance, onStep, onFinalize, onStart = () => {} }) => {
+    onStart();
+
+    return interval(scrollSpeed).pipe(
+      takeUntil(this.destroy$),
+      take(Math.ceil(totalDistance / scrollStep)),
+      tap(() => {
+        onStep();
+        p.redraw();
+      }),
+      last(),
+      finalize(() => {
+        onFinalize();
+      })
+    );
   };
 
   /**
@@ -177,9 +299,8 @@ class DotMatrixSketch {
    * @param {Object} p - p5.js instance
    */
   nextMessage = (p) => {
-    this.scrollOffset = 0;
-    this.isScrolling = false;
     this.currentMsgIndex = (this.currentMsgIndex + 1) % this.msgArray.length;
+    this.currentMsg = this.msgArray[this.currentMsgIndex];
 
     this.clearSubscriptions();
     this.startMsgTimer(p);
@@ -192,12 +313,24 @@ class DotMatrixSketch {
   drawBoard = (p) => {
     let dotX = dotRadius;
     let dotY = dotRadius;
+    let bumperVisible = bumperWidth;
+
+    // Handle transition bumper animation
+    if (this.isInTransition) {
+      if (this.transitionPhase === "in") {
+        bumperVisible = this.transitionOffset;
+      } else if (this.transitionPhase === "out") {
+        bumperVisible = bumperWidth - this.transitionOffset;
+      } else {
+        bumperVisible = 0;
+      }
+    }
 
     for (let i = 0; i < numRows; i++) {
       dotX = dotRadius;
 
       for (let j = 0; j < this.numCols; j++) {
-        const color = j < bumperWidth || j >= this.numCols - bumperWidth ? this.bumperColor : dotColor.off;
+        const color = j < bumperVisible || j >= this.numCols - bumperVisible ? this.bumperColor : dotColor.off;
         p.fill(color);
         p.ellipseMode(p.RADIUS);
         p.ellipse(dotX, dotY, dotRadius, dotRadius);
@@ -222,9 +355,8 @@ class DotMatrixSketch {
     }
 
     let msgWidth = 0;
-    for (const char of this.msgArray[this.currentMsgIndex]) {
+    for (const char of this.currentMsg) {
       const charStartX = startX + msgWidth;
-
       this.renderChar(p, char, charStartX, startY);
 
       msgWidth += dotUnit * (charWidth + charGap);
@@ -269,13 +401,11 @@ class DotMatrixSketch {
    * @returns {Object} Object containing startX and startY coordinates in pixels
    */
   calcStartPos = () => {
-    const message = this.msgArray[this.currentMsgIndex];
-
     let startX = dotRadius + bumperWidth * dotUnit;
     let startY = dotUnit * paddingY + dotRadius;
-    let msgLength = this.getMsgLength(message);
+    let msgLength = this.getMsgLength(this.currentMsg);
 
-    if (!this.isMsgOverflow(message)) {
+    if (!this.isMsgOverflow(this.currentMsg)) {
       startX += Math.floor((this.numCols - bumperWidth * 2 - msgLength) / 2) * dotUnit; // Center align
     } else {
       startX += paddingX * dotUnit; // Left align with padding
@@ -313,11 +443,6 @@ class DotMatrixSketch {
     if (this.timer$) {
       this.timer$.unsubscribe();
       this.timer$ = null;
-    }
-
-    if (this.scroll$) {
-      this.scroll$.unsubscribe();
-      this.scroll$ = null;
     }
   };
 }

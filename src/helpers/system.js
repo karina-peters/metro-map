@@ -56,7 +56,7 @@ class SystemService {
     });
 
     if (!nextStnCkt) {
-      throw new Error("Station not found");
+      console.error("Station not found");
     }
 
     return nextStnCkt;

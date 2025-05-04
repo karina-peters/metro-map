@@ -11,6 +11,7 @@ const manualRefresh$ = new Subject();
 const pauseRefresh$ = new Subject();
 const timer$ = timer(0, REFRESH_RATE).pipe(takeUntil(pauseRefresh$));
 
+let dotMatrix = null;
 let trainPositions = [];
 let selectedId = "";
 
@@ -50,15 +51,14 @@ export const render = async () => {
  * Pauses component updates
  */
 export const pause = () => {
+  dotMatrix.destroy$.next();
   pauseRefresh$.next();
 };
 
 /**
  * Attaches all required event listeners
  */
-const attachEventListeners = () => {
-  // TODO: select train from list
-};
+const attachEventListeners = () => {};
 
 const drawTrainSign = async () => {
   try {
@@ -67,7 +67,7 @@ const drawTrainSign = async () => {
     let msgArray = trainPositions.length > 0 ? await getCurrentMsgList(selectedTrain) : [defaultMsg];
 
     // Draw board with p5.js
-    const dotMatrix = new DotMatrixSketch(msgArray, selectedTrain?.LineCode, selectedTrain?.trainId, boardTarget);
+    dotMatrix = new DotMatrixSketch(msgArray, selectedTrain?.LineCode, selectedTrain?.trainId, boardTarget);
     new p5(dotMatrix.sketch, boardTarget);
 
     // Update messages for selected train
@@ -101,17 +101,24 @@ const drawTrainList = async () => {
       // Draw a button for each train
       trainPositions.map((train) => {
         const button = document.createElement("button");
+        button.id = `ID${train.TrainId}`;
         button.classList.add("btn-dark", "btn-train");
         button.textContent = train.TrainId;
         button.value = train.TrainId;
 
         button.addEventListener("click", (event) => {
-          selectedId = event.currentTarget.value;
-          manualRefresh$.next();
+          if (event.currentTarget.value !== selectedId) {
+            selectButton(event.currentTarget.value);
+
+            manualRefresh$.next();
+          }
         });
 
         listTarget.appendChild(button);
       });
+
+      // Select the button with the default selected id
+      selectButton(selectedId);
     });
   } catch (error) {
     console.error("Failed to draw train list:", error);
@@ -122,7 +129,7 @@ const drawTrainList = async () => {
 
 /**
  * Constructs a list of messages based on the position and destination of the train with the provided id
- * @param {string} trainId train to display
+ * @param {string} trainId - Train to display
  * @returns an Array of message strings
  */
 const getCurrentMsgList = async (train) => {
@@ -131,11 +138,13 @@ const getCurrentMsgList = async (train) => {
     return null;
   }
 
+  // e.g. [DESTINATION, GREENBELT]
   const destStation = await metroSystem.getStationName(train.DestinationStationCode);
   if (destStation) {
     msgArray.push("Destination", `${destStation}`);
   }
 
+  // e.g. [THIS IS, METRO CENTER]
   const nextStnCkt = await metroSystem.getNextStationCkt(train.CircuitId, train.LineCode, train.DirectionNum);
   if (nextStnCkt) {
     const stationName = await metroSystem.getStationName(nextStnCkt.stnCode);
@@ -147,4 +156,24 @@ const getCurrentMsgList = async (train) => {
   }
 
   return msgArray;
+};
+
+/**
+ * Deselects currently selected train button and selects button for provided train id
+ * @param {string} trainId - Train to display
+ */
+const selectButton = (trainId) => {
+  // Unselect currently selected button if exists
+  const selectedBtn = document.querySelector(".btn-train.selected");
+  if (selectedBtn) {
+    selectedBtn.classList.remove("selected");
+  }
+
+  // Select button for train <trainId>
+  const button = document.querySelector(`.btn-train#ID${trainId}`);
+  if (button) {
+    button.classList.add("selected");
+  }
+
+  selectedId = trainId;
 };
