@@ -5,6 +5,7 @@ import { metroSystem, REFRESH_RATE } from "../helpers/system.js";
 import DotMatrixSketch from "../components/dotMatrixSketch.js";
 
 const headingText = "Trains";
+const defaultMsg = "No trains running!";
 
 const manualRefresh$ = new Subject();
 const pauseRefresh$ = new Subject();
@@ -24,7 +25,7 @@ const template = () => {
 (async () => {
   // Fetch data
   trainPositions = await metroSystem.fetchTrainPositions();
-  selectedId = trainPositions[0].TrainId; // trainPositions.find((t) => t.SecondsAtLocation <= 240).TrainId; // trainPositions[0].TrainId; // trainPositions.find((t) => t.LineCode === "GR").TrainId;
+  selectedId = trainPositions[0]?.TrainId;
 })();
 
 export const render = async () => {
@@ -63,7 +64,7 @@ const drawTrainSign = async () => {
   try {
     const boardTarget = document.querySelector(".board-target");
     let selectedTrain = trainPositions.find((t) => t.TrainId === selectedId);
-    let msgArray = await getCurrentMsgList(selectedTrain);
+    let msgArray = trainPositions.length > 0 ? await getCurrentMsgList(selectedTrain) : [defaultMsg];
 
     // Draw board with p5.js
     const dotMatrix = new DotMatrixSketch(msgArray, selectedTrain?.LineCode, selectedTrain?.trainId, boardTarget);
@@ -71,11 +72,16 @@ const drawTrainSign = async () => {
 
     // Update messages for selected train
     merge(timer$, manualRefresh$).subscribe(async () => {
-      const labelTarget = document.querySelector(".train-label");
-      labelTarget.textContent = `Train ${selectedId}`;
+      if (trainPositions.length > 0) {
+        const labelTarget = document.querySelector(".train-label");
+        labelTarget.textContent = `Train ${selectedId}`;
 
-      selectedTrain = trainPositions.find((t) => t.TrainId === selectedId);
-      msgArray = await getCurrentMsgList(selectedTrain);
+        selectedTrain = trainPositions.find((t) => t.TrainId === selectedId);
+        msgArray = await getCurrentMsgList(selectedTrain);
+      } else {
+        msgArray = [defaultMsg];
+      }
+
       dotMatrix.data$.next({ msgArray, lineId: selectedTrain?.LineCode, trainId: selectedTrain?.TrainId });
     });
   } catch (error) {

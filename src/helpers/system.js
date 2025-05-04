@@ -37,7 +37,7 @@ class SystemService {
 
     const entries = this.cktListCache.get(REGIONS.ALL);
     const lineId = this.getLineId(lineCode, lineNum);
-    const circuits = entries.get(lineId);
+    const circuits = lineNum === 1 ? entries.get(lineId) : Array.from(entries.get(lineId)).reverse();
 
     const currentCkt = circuits.find((c) => c.id === cktId);
     if (!currentCkt) {
@@ -46,7 +46,15 @@ class SystemService {
     }
 
     // TODO: handle circuits beyond terminal station
-    const nextStnCkt = circuits.find((c) => c.seqNum >= currentCkt.seqNum && c.stnCode !== null);
+    const nextStnCkt = circuits.find((c) => {
+      let hasStation = c.stnCode !== null;
+      if (lineNum === 1) {
+        return hasStation && c.seqNum >= currentCkt.seqNum;
+      } else {
+        return hasStation && c.seqNum <= currentCkt.seqNum;
+      }
+    });
+
     if (!nextStnCkt) {
       throw new Error("Station not found");
     }

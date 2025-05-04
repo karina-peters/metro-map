@@ -3,7 +3,7 @@ export const lineColor = {
   RD: "#d90429",
   OR: "#fb6107",
   YL: "#ffd700",
-  SV: "#E6E8E6",
+  SV: "#B2B4B2",
   BL: "#3772FF",
 };
 

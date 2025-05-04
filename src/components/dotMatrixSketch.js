@@ -18,7 +18,7 @@ const charHeight = fontData[0].length;
 const paddingX = 2;
 const paddingY = 4;
 const numRows = charHeight + 2 * paddingY;
-const highlightWidth = 4;
+const bumperWidth = 4;
 
 class DotMatrixSketch {
   /**
@@ -32,7 +32,7 @@ class DotMatrixSketch {
     this.data$ = new BehaviorSubject({ msgArray, lineId, trainId });
     this.msgArray = msgArray;
     this.trainId = trainId;
-    this.highlightColor = lineColor[lineId];
+    this.bumperColor = lineId && Object.hasOwn(lineColor, lineId) ? lineColor[lineId] : dotColor.off;
     this.currentMsgIndex = 0;
 
     // Board State
@@ -81,13 +81,13 @@ class DotMatrixSketch {
       };
 
       self.data$.subscribe(({ msgArray, lineId, trainId }) => {
-        if (this.isScrolling) {
+        if (this.isScrolling && trainId === self.trainId) {
           console.log("scrolling...data update skipped");
           return;
         }
 
         self.msgArray = msgArray;
-        self.highlightColor = lineColor[lineId];
+        self.bumperColor = lineId && Object.hasOwn(lineColor, lineId) ? lineColor[lineId] : dotColor.off;
 
         // If new train id, reset and start new timer
         if (trainId !== self.trainId) {
@@ -156,7 +156,7 @@ class DotMatrixSketch {
    */
   startScroll = (p, msgWidth) => {
     this.isScrolling = true;
-    const scrollDistance = msgWidth + highlightWidth + 2 * paddingX;
+    const scrollDistance = msgWidth + bumperWidth + 2 * paddingX;
 
     this.scroll$ = interval(scrollSpeed).subscribe(() => {
       this.scrollOffset += this.scrollStep;
@@ -197,7 +197,7 @@ class DotMatrixSketch {
       dotX = dotRadius;
 
       for (let j = 0; j < this.numCols; j++) {
-        const color = j < highlightWidth ? this.highlightColor : dotColor.off;
+        const color = j < bumperWidth || j >= this.numCols - bumperWidth ? this.bumperColor : dotColor.off;
         p.fill(color);
         p.ellipseMode(p.RADIUS);
         p.ellipse(dotX, dotY, dotRadius, dotRadius);
@@ -244,8 +244,8 @@ class DotMatrixSketch {
     let dotY = startY;
 
     for (const row of charMatrix) {
-      const scrollStart = (highlightWidth + paddingX) * dotUnit;
-      const scrollEnd = (this.numCols - paddingX) * dotUnit - dotGap;
+      const scrollStart = (bumperWidth + paddingX) * dotUnit;
+      const scrollEnd = (this.numCols - bumperWidth - paddingX) * dotUnit - dotGap;
 
       let dotX = startX;
 
@@ -271,12 +271,12 @@ class DotMatrixSketch {
   calcStartPos = () => {
     const message = this.msgArray[this.currentMsgIndex];
 
-    let startX = dotRadius + highlightWidth * dotUnit;
+    let startX = dotRadius + bumperWidth * dotUnit;
     let startY = dotUnit * paddingY + dotRadius;
     let msgLength = this.getMsgLength(message);
 
     if (!this.isMsgOverflow(message)) {
-      startX += Math.floor((this.numCols - highlightWidth - msgLength) / 2) * dotUnit; // Center align
+      startX += Math.floor((this.numCols - bumperWidth * 2 - msgLength) / 2) * dotUnit; // Center align
     } else {
       startX += paddingX * dotUnit; // Left align with padding
     }
@@ -300,7 +300,7 @@ class DotMatrixSketch {
    */
   isMsgOverflow = (message) => {
     const msgWidth = this.getMsgLength(message);
-    const visibleWidth = this.numCols - highlightWidth - paddingX * 2;
+    const visibleWidth = this.numCols - (bumperWidth + paddingX) * 2;
 
     return msgWidth > visibleWidth;
   };
