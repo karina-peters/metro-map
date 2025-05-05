@@ -11,8 +11,8 @@ import {
   take,
   delay,
   distinctUntilChanged,
-  iif,
   last,
+  forkJoin,
 } from "rxjs";
 
 import { backgroundColor, dotColor, lineColor } from "../helpers/colors.js";
@@ -33,9 +33,10 @@ const dotUnit = dotRadius * 2 + dotGap;
 const charGap = 1;
 const charWidth = fontData[0][0].length;
 const charHeight = fontData[0].length;
-const paddingX = 2;
-const paddingY = 4;
-const numRows = charHeight + 2 * paddingY;
+const paddingX = 0;
+const paddingY = 2;
+const msgMargin = 2;
+const numRows = charHeight + 2 * (paddingY + msgMargin);
 const bumperWidth = 4;
 const scrollStep = 1;
 
@@ -66,9 +67,12 @@ class DotMatrixSketch {
     this.timer$ = null;
     this.scrollOffset = 0;
     this.isScrolling = false;
-    this.transitionOffset = 0;
     this.isInTransition = true;
     this.transitionPhase = null;
+    this.slideOffset = 0;
+    this.isSliding = false;
+    this.bumperOffset = 0;
+    this.isBumping = true;
 
     // Sizing
     this.parentElt = parentElt;
@@ -118,13 +122,10 @@ class DotMatrixSketch {
             this.msgArray = msgArray;
           }),
           distinctUntilChanged((prev, curr) => prev.trainId === curr.trainId),
-          switchMap(({ trainId, lineId }) => {
+          switchMap(({ trainId, lineId }) =>
             // Start transition for newly selected train
-            return this.doTransition$(p, trainId, lineId).pipe(
-              delay(transitionDelay),
-              tap(() => this.startMsgTimer(p))
-            );
-          })
+            this.doTransition$(p, trainId, lineId).pipe(tap(() => this.startMsgTimer(p)))
+          )
         )
         .subscribe();
 
@@ -145,7 +146,7 @@ class DotMatrixSketch {
       // Draw the current state
       this.drawBoard(p);
 
-      if (!this.isInTransition) {
+      if (!this.isInTransition || this.transitionPhase === "in") {
         this.drawMessage(p);
       }
 
@@ -174,14 +175,10 @@ class DotMatrixSketch {
         takeUntil(this.destroy$),
         switchMap(() =>
           // Scroll message if overflowing
-          iif(() => this.isMsgOverflow(this.currentMsg), this.scrollMessage$(p), of(null))
+          needsScroll ? this.scrollMessage$(p) : of(null)
         ),
         takeWhile(() => !this.isInTransition),
-        finalize(() => {
-          if (!this.isInTransition && !this.isDestroyed) {
-            this.nextMessage(p);
-          }
-        })
+        tap(() => this.nextMessage(p))
       )
       .subscribe();
   };
@@ -200,24 +197,29 @@ class DotMatrixSketch {
 
     return of(null).pipe(
       takeUntil(this.destroy$),
-      switchMap(() =>
+      switchMap(() => {
+        this.transitionPhase = "out";
+
         // Skip exit animation if no train selected
-        iif(() => this.trainId === null, of(null), this.animateBumpers$(p, "out"))
-      ),
+        return this.trainId === null ? of(null) : this.animateBumpers$(p);
+      }),
       tap(() => {
-        console.log("changing to", newTrainId);
         this.transitionPhase = "change";
+        console.log(`changing from train ${this.trainId} to ${newTrainId}`);
 
         this.bumperColor = newLineId && Object.hasOwn(lineColor, newLineId) ? lineColor[newLineId] : dotColor.off;
         this.trainId = newTrainId;
-        this.currentMsg = this.msgArray[defaultMsgIndex];
+        this.setCurrentMsg(defaultMsgIndex);
       }),
       delay(transitionDelay),
-      switchMap(() => this.animateBumpers$(p, "in")),
+      switchMap(() => {
+        this.transitionPhase = "in";
+        return forkJoin([this.animateBumpers$(p), this.slideMessageIn$(p)]);
+      }),
       finalize(() => {
-        console.log("finalizing transition");
-        this.transitionOffset = 0;
         this.isInTransition = false;
+        this.bumperOffset = 0;
+        this.slideOffset = 0;
       })
     );
   };
@@ -230,7 +232,7 @@ class DotMatrixSketch {
     console.log("scrolling...");
 
     return this.createScrollAnimation(p, {
-      totalDistance: this.getMsgLength(this.currentMsg) + bumperWidth + 2 * paddingX,
+      totalDistance: this.getMsgLength(this.currentMsg) + bumperWidth + 2 * msgMargin,
       onStart: () => {
         this.isScrolling = true;
       },
@@ -244,25 +246,43 @@ class DotMatrixSketch {
     });
   };
 
+  slideMessageIn$ = (p, /* TODO */ direction) => {
+    console.log("sliding message in...");
+
+    return this.createScrollAnimation(p, {
+      totalDistance: charHeight + paddingY + msgMargin,
+      onStart: () => {
+        this.isSliding = true;
+      },
+      onStep: () => {
+        this.slideOffset += scrollStep;
+      },
+      onFinalize: () => {
+        this.isSliding = false;
+        this.slideOffset = 0;
+      },
+    });
+  };
+
   /**
    * Start bumper transition animation
    * @param {Object} p - p5.js instance
-   * @param {string} phase - Transition phase (in, out)
    * @returns
    */
-  animateBumpers$ = (p, phase) => {
-    console.log("animating bumpers...");
+  animateBumpers$ = (p) => {
+    console.log(`animating bumpers ${this.transitionPhase}...`);
 
     return this.createScrollAnimation(p, {
       totalDistance: bumperWidth,
       onStart: () => {
-        this.transitionPhase = phase;
+        this.isBumping = true;
       },
       onStep: () => {
-        this.transitionOffset += scrollStep;
+        this.bumperOffset += scrollStep;
       },
       onFinalize: () => {
-        this.transitionOffset = 0;
+        this.isBumping = false;
+        this.bumperOffset = 0;
       },
     });
   };
@@ -299,9 +319,7 @@ class DotMatrixSketch {
    * @param {Object} p - p5.js instance
    */
   nextMessage = (p) => {
-    this.currentMsgIndex = (this.currentMsgIndex + 1) % this.msgArray.length;
-    this.currentMsg = this.msgArray[this.currentMsgIndex];
-
+    this.setCurrentMsg((this.currentMsgIndex + 1) % this.msgArray.length);
     this.clearSubscriptions();
     this.startMsgTimer(p);
   };
@@ -316,11 +334,11 @@ class DotMatrixSketch {
     let bumperVisible = bumperWidth;
 
     // Handle transition bumper animation
-    if (this.isInTransition) {
+    if (this.isBumping) {
       if (this.transitionPhase === "in") {
-        bumperVisible = this.transitionOffset;
+        bumperVisible = this.bumperOffset;
       } else if (this.transitionPhase === "out") {
-        bumperVisible = bumperWidth - this.transitionOffset;
+        bumperVisible = bumperWidth - this.bumperOffset;
       } else {
         bumperVisible = 0;
       }
@@ -354,6 +372,11 @@ class DotMatrixSketch {
       startX -= this.scrollOffset * dotUnit;
     }
 
+    if (this.isSliding) {
+      // TODO: handle different directions
+      startY = startY + (this.slideOffset - charHeight - msgMargin - paddingY) * dotUnit;
+    }
+
     let msgWidth = 0;
     for (const char of this.currentMsg) {
       const charStartX = startX + msgWidth;
@@ -376,13 +399,15 @@ class DotMatrixSketch {
     let dotY = startY;
 
     for (const row of charMatrix) {
-      const scrollStart = (bumperWidth + paddingX) * dotUnit;
-      const scrollEnd = (this.numCols - bumperWidth - paddingX) * dotUnit - dotGap;
+      const fieldTop = msgMargin;
+      const fieldRight = (this.numCols - paddingX - bumperWidth - msgMargin) * dotUnit - dotGap;
+      const fieldBottom = numRows * dotUnit - dotGap - msgMargin;
+      const fieldLeft = (paddingX + bumperWidth + msgMargin) * dotUnit;
 
       let dotX = startX;
 
       for (const dotVal of row) {
-        if (dotVal === 1 && dotX >= scrollStart && dotX <= scrollEnd) {
+        if (dotVal === 1 && dotY >= fieldTop && dotX <= fieldRight && dotY <= fieldBottom && dotX >= fieldLeft) {
           p.fill(dotColor.on);
           p.ellipseMode(p.RADIUS);
           p.ellipse(dotX, dotY, dotRadius, dotRadius);
@@ -402,13 +427,13 @@ class DotMatrixSketch {
    */
   calcStartPos = () => {
     let startX = dotRadius + bumperWidth * dotUnit;
-    let startY = dotUnit * paddingY + dotRadius;
+    let startY = dotUnit * (paddingY + msgMargin) + dotRadius;
     let msgLength = this.getMsgLength(this.currentMsg);
 
     if (!this.isMsgOverflow(this.currentMsg)) {
       startX += Math.floor((this.numCols - bumperWidth * 2 - msgLength) / 2) * dotUnit; // Center align
     } else {
-      startX += paddingX * dotUnit; // Left align with padding
+      startX += msgMargin * dotUnit; // Left align with padding
     }
 
     return { startX, startY };
@@ -430,9 +455,18 @@ class DotMatrixSketch {
    */
   isMsgOverflow = (message) => {
     const msgWidth = this.getMsgLength(message);
-    const visibleWidth = this.numCols - (bumperWidth + paddingX) * 2;
+    const visibleWidth = this.numCols - (bumperWidth + msgMargin) * 2;
 
     return msgWidth > visibleWidth;
+  };
+
+  /**
+   * Update current message to the one at the provided index
+   * @param {number} index - Message index
+   */
+  setCurrentMsg = (index) => {
+    this.currentMsgIndex = index;
+    this.currentMsg = this.msgArray[index];
   };
 
   /**
