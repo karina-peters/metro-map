@@ -2,7 +2,7 @@ import { Subject, takeUntil, merge, timer } from "rxjs";
 import p5 from "p5";
 
 import { metroSystem, REFRESH_RATE } from "../helpers/system.js";
-import DotMatrixSketch from "../components/dotMatrixSketch.js";
+import TrainBoard from "../components/trainBoard.js";
 
 const headingText = "Trains";
 const defaultMsg = "No trains running!";
@@ -11,7 +11,7 @@ const manualRefresh$ = new Subject();
 const pauseRefresh$ = new Subject();
 const timer$ = timer(0, REFRESH_RATE).pipe(takeUntil(pauseRefresh$));
 
-let dotMatrix = null;
+let trainBoard = null;
 let trainPositions = [];
 let selectedId = "";
 
@@ -51,7 +51,7 @@ export const render = async () => {
  * Pauses component updates
  */
 export const pause = () => {
-  dotMatrix.destroy$.next();
+  trainBoard.destroy$.next();
   pauseRefresh$.next();
 };
 
@@ -67,8 +67,8 @@ const drawTrainSign = async () => {
     let msgArray = trainPositions.length > 0 ? await getCurrentMsgList(selectedTrain) : [defaultMsg];
 
     // Draw board with p5.js
-    dotMatrix = new DotMatrixSketch(msgArray, selectedTrain?.LineCode, selectedTrain?.trainId, boardTarget);
-    new p5(dotMatrix.sketch, boardTarget);
+    trainBoard = new TrainBoard(msgArray, selectedTrain?.LineCode, selectedTrain?.trainId, boardTarget);
+    new p5(trainBoard.sketch, boardTarget);
 
     // Update messages for selected train
     merge(timer$, manualRefresh$).subscribe(async () => {
@@ -82,7 +82,7 @@ const drawTrainSign = async () => {
         msgArray = [defaultMsg];
       }
 
-      dotMatrix.data$.next({ msgArray, lineId: selectedTrain?.LineCode, trainId: selectedTrain?.TrainId });
+      trainBoard.data$.next({ msgArray, lineId: selectedTrain?.LineCode, trainId: selectedTrain?.TrainId });
     });
   } catch (error) {
     console.error("Failed to draw train board:", error);

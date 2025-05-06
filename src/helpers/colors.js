@@ -17,4 +17,5 @@ export const textColor = {
 export const dotColor = {
   on: "#E49B09",
   off: "#111111",
+  heading: "#d90429",
 };

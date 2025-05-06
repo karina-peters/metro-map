@@ -1,22 +1,8 @@
-import {
-  timer,
-  interval,
-  takeWhile,
-  tap,
-  switchMap,
-  finalize,
-  Subject,
-  takeUntil,
-  of,
-  take,
-  delay,
-  distinctUntilChanged,
-  last,
-  forkJoin,
-} from "rxjs";
+import { timer, takeWhile, tap, switchMap, finalize, Subject, takeUntil, of, delay, distinctUntilChanged, forkJoin } from "rxjs";
 
 import { backgroundColor, dotColor, lineColor } from "../helpers/colors.js";
 import { fontData } from "../helpers/dotFont.js";
+import DotMatrix from "../helpers/dotMatrix.js";
 
 // Timing (ms)
 const pauseDuration = 2500;
@@ -37,13 +23,14 @@ const paddingX = 0;
 const paddingY = 2;
 const msgMargin = 2;
 const numRows = charHeight + 2 * (paddingY + msgMargin);
+const numCols = 120;
 const bumperWidth = 4;
 const scrollStep = 1;
 
 // Other
 const defaultMsgIndex = 0;
 
-class DotMatrixSketch {
+class TrainBoard extends DotMatrix {
   /**
    * Create new DotMatrixSketch instance
    * @param {Array<string>} msgArray - List of messages to loop through
@@ -51,9 +38,7 @@ class DotMatrixSketch {
    * @param {string} trainId - Train id to track changes
    */
   constructor(msgArray, lineId, trainId, parentElt) {
-    // Component State
-    this.destroy$ = new Subject();
-    this.isDestroyed = false;
+    super(numRows, numCols, dotRadius, dotGap);
 
     // Data
     this.data$ = new Subject({ msgArray, lineId, trainId });
@@ -76,7 +61,7 @@ class DotMatrixSketch {
 
     // Sizing
     this.parentElt = parentElt;
-    this.numCols = 0;
+    this.numCols = numCols;
     this.breakpoint = 600;
 
     this.setCanvasSize();
@@ -89,6 +74,14 @@ class DotMatrixSketch {
     }
 
     this.numCols = Math.floor(this.parentElt.clientWidth / dotUnit);
+
+    this.setBoardSize(numRows, this.numCols);
+    this.setTextField({
+      top: paddingY + msgMargin,
+      right: (this.numCols - paddingX - bumperWidth - msgMargin) * dotUnit - dotGap,
+      bottom: (numRows - paddingY - msgMargin) * dotUnit - dotGap,
+      left: (paddingX + bumperWidth + msgMargin) * dotUnit,
+    });
 
     const width = this.numCols * dotUnit - dotGap;
     const height = numRows * dotUnit - dotGap;
@@ -232,6 +225,8 @@ class DotMatrixSketch {
     console.log("scrolling...");
 
     return this.createScrollAnimation(p, {
+      speed: scrollSpeed,
+      step: scrollStep,
       totalDistance: this.getMsgLength(this.currentMsg) + bumperWidth + 2 * msgMargin,
       onStart: () => {
         this.isScrolling = true;
@@ -250,6 +245,8 @@ class DotMatrixSketch {
     console.log("sliding message in...");
 
     return this.createScrollAnimation(p, {
+      speed: scrollSpeed,
+      step: scrollStep,
       totalDistance: charHeight + paddingY + msgMargin,
       onStart: () => {
         this.isSliding = true;
@@ -273,6 +270,8 @@ class DotMatrixSketch {
     console.log(`animating bumpers ${this.transitionPhase}...`);
 
     return this.createScrollAnimation(p, {
+      speed: scrollSpeed,
+      step: scrollStep,
       totalDistance: bumperWidth,
       onStart: () => {
         this.isBumping = true;
@@ -285,33 +284,6 @@ class DotMatrixSketch {
         this.bumperOffset = 0;
       },
     });
-  };
-
-  /**
-   * Generalized offset animation for scroll or bumper transition
-   * (modified from consolidation of previous redundant startScroll and startBumperAnimation functions by ChatGPT)
-   * @param {Object} p - p5.js instance
-   * @param {Object} options
-   * @param {number} options.totalDistance - Total distance to scroll
-   * @param {Function} options.onStep - Called each tick to update offset
-   * @param {Function} options.onFinalize - Called once when animation completes
-   * @param {Function} [options.onStart] - Optional setup at animation start
-   */
-  createScrollAnimation = (p, { totalDistance, onStep, onFinalize, onStart = () => {} }) => {
-    onStart();
-
-    return interval(scrollSpeed).pipe(
-      takeUntil(this.destroy$),
-      take(Math.ceil(totalDistance / scrollStep)),
-      tap(() => {
-        onStep();
-        p.redraw();
-      }),
-      last(),
-      finalize(() => {
-        onFinalize();
-      })
-    );
   };
 
   /**
@@ -380,43 +352,9 @@ class DotMatrixSketch {
     let msgWidth = 0;
     for (const char of this.currentMsg) {
       const charStartX = startX + msgWidth;
-      this.renderChar(p, char, charStartX, startY);
+      this.renderChar(p, char, charStartX, startY, dotColor.on);
 
       msgWidth += dotUnit * (charWidth + charGap);
-    }
-  };
-
-  /**
-   * Render a single character on the dot matrix display
-   * Only renders dots within the visible display area
-   * @param {Object} p - p5.js instance
-   * @param {string} char - Character to render
-   * @param {number} startX - Starting X position in pixels
-   * @param {number} startY - Starting Y position in pixels
-   */
-  renderChar = (p, char, startX, startY) => {
-    const charMatrix = fontData[char.toUpperCase()] || fontData[" "]; // Default to space if character not found
-    let dotY = startY;
-
-    for (const row of charMatrix) {
-      const fieldTop = msgMargin;
-      const fieldRight = (this.numCols - paddingX - bumperWidth - msgMargin) * dotUnit - dotGap;
-      const fieldBottom = numRows * dotUnit - dotGap - msgMargin;
-      const fieldLeft = (paddingX + bumperWidth + msgMargin) * dotUnit;
-
-      let dotX = startX;
-
-      for (const dotVal of row) {
-        if (dotVal === 1 && dotY >= fieldTop && dotX <= fieldRight && dotY <= fieldBottom && dotX >= fieldLeft) {
-          p.fill(dotColor.on);
-          p.ellipseMode(p.RADIUS);
-          p.ellipse(dotX, dotY, dotRadius, dotRadius);
-        }
-
-        dotX += dotUnit;
-      }
-
-      dotY += dotUnit;
     }
   };
 
@@ -440,27 +378,6 @@ class DotMatrixSketch {
   };
 
   /**
-   * Calculate the length of a message in number of dots
-   * @param {string} message - The message to measure
-   * @returns {number} Length of the message in dot matrix columns
-   */
-  getMsgLength = (message) => {
-    return message.length * (charWidth + charGap) - charGap;
-  };
-
-  /**
-   * Check if a message is too long to fit on the display
-   * @param {string} message - The message to check
-   * @returns {boolean} True if the message needs to scroll, false otherwise
-   */
-  isMsgOverflow = (message) => {
-    const msgWidth = this.getMsgLength(message);
-    const visibleWidth = this.numCols - (bumperWidth + msgMargin) * 2;
-
-    return msgWidth > visibleWidth;
-  };
-
-  /**
    * Update current message to the one at the provided index
    * @param {number} index - Message index
    */
@@ -481,4 +398,4 @@ class DotMatrixSketch {
   };
 }
 
-export default DotMatrixSketch;
+export default TrainBoard;
