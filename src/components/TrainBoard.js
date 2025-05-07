@@ -37,7 +37,7 @@ class TrainBoard extends DotMatrix {
    * @param {string} lineId - Line id for the color
    * @param {string} trainId - Train id to track changes
    */
-  constructor(msgArray, lineId, trainId, parentElt) {
+  constructor(parentElt, msgArray, lineId, trainId) {
     super(numRows, numCols, dotRadius, dotGap);
 
     // Data
@@ -125,7 +125,6 @@ class TrainBoard extends DotMatrix {
       // Handle component destruction
       self.destroy$.subscribe(() => {
         console.log("destroying...");
-        this.isDestroyed = true;
       });
 
       // console.log("DotMatrixSketch: p5.js setup function executed!");
@@ -200,7 +199,7 @@ class TrainBoard extends DotMatrix {
         this.transitionPhase = "change";
         console.log(`changing from train ${this.trainId} to ${newTrainId}`);
 
-        this.bumperColor = newLineId && Object.hasOwn(lineColor, newLineId) ? lineColor[newLineId] : dotColor.off;
+        this.bumperColor = newLineId && lineColor[newLineId] ? lineColor[newLineId] : dotColor.off;
         this.trainId = newTrainId;
         this.setCurrentMsg(defaultMsgIndex);
       }),
@@ -382,8 +381,13 @@ class TrainBoard extends DotMatrix {
    * @param {number} index - Message index
    */
   setCurrentMsg = (index) => {
-    this.currentMsgIndex = index;
+    if (!this.msgArray || !this.msgArray[index]) {
+      this.currentMsg = "";
+      this.currentMsgIndex = -1;
+    }
+
     this.currentMsg = this.msgArray[index];
+    this.currentMsgIndex = index;
   };
 
   /**

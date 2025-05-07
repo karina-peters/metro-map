@@ -9,35 +9,47 @@ const dotRadius = 4;
 const dotGap = 2;
 const dotUnit = dotRadius * 2 + dotGap;
 
-// Dimensions (dot count)
+// Board Dimensions (dot count)
 const charGap = 1;
 const charWidth = fontData[0][0].length;
 const charHeight = fontData[0].length;
 const paddingX = 0;
-const paddingY = 2;
+const paddingY = 0;
 const msgMargin = 2;
-const numRows = 80;
-const numCols = 120;
+
+// Table Dimensions (dot count)
+const COLUMN_LAYOUT = ["hug", "hug", "fill", "hug"];
+const colGap = 4;
+const rowGap = 4;
+const maxMsgLength = 10;
 
 class StationBoard extends DotMatrix {
   /**
-   * Create new DotMatrixSketch instance
-   * @param {Array<string>} msgArray - List of messages to loop through
+   * Create new StationBoard instance
+   * @param {Array<string>} tableHead - Array of column headers
+   * @param {Array<string>} msgTable - Array of messages to draw
    * @param {string} lineId - Line id for the color
    * @param {string} trainId - Train id to track changes
    */
-  constructor(msgArray, stationId, parentElt) {
-    super(numRows, numCols, dotRadius, dotGap);
+  constructor(parentElt, tableHead, msgTable, stationId, hiddenCol = null) {
+    super(0, 0, dotRadius, dotGap);
 
     // Data
-    this.data$ = new Subject({ msgArray, stationId });
-    this.msgArray = msgArray;
-    this.currentMsg = msgArray[0];
+    this.data$ = new Subject({ msgTable, stationId });
+    this.tableHead = tableHead;
+    this.msgTable = msgTable;
+
+    // Table
+    this.numTableRows = 4;
+    this.numTableCols = this.tableHead.length;
+    this.columnToHide = hiddenCol;
+    this.columnHidden = false;
 
     // Sizing
     this.parentElt = parentElt;
-    this.numCols = numCols;
-    this.breakpoint = 600;
+    this.numCols = Math.max(this.calcMinBoardWidth(), Math.floor(this.parentElt.clientWidth / dotUnit));
+    this.numRows = this.numTableRows * (charHeight + rowGap) - rowGap + 2 * (msgMargin + paddingY);
+    this.breakpoint = 1375;
 
     this.setCanvasSize();
   }
@@ -45,21 +57,23 @@ class StationBoard extends DotMatrix {
   setCanvasSize = () => {
     // TODO - Handle breakpoints
     if (window.innerWidth < this.breakpoint) {
+      this.columnHidden = true;
     } else {
+      this.columnHidden = false;
     }
 
-    this.numCols = Math.floor(this.parentElt.clientWidth / dotUnit);
+    this.numCols = Math.max(this.calcMinBoardWidth(), Math.floor(this.parentElt.clientWidth / dotUnit));
 
-    this.setBoardSize(numRows, this.numCols);
+    this.setBoardSize(this.numRows, this.numCols);
     this.setTextField({
       top: paddingY + msgMargin,
       right: (this.numCols - paddingX - msgMargin) * dotUnit - dotGap,
-      bottom: (numRows - paddingY - msgMargin) * dotUnit - dotGap,
+      bottom: (this.numRows - paddingY - msgMargin) * dotUnit - dotGap,
       left: (paddingX + msgMargin) * dotUnit,
     });
 
     const width = this.numCols * dotUnit - dotGap;
-    const height = numRows * dotUnit - dotGap;
+    const height = this.numRows * dotUnit - dotGap;
 
     this.canvasSize = { width, height };
   };
@@ -81,16 +95,18 @@ class StationBoard extends DotMatrix {
       };
 
       // Start the message timer
-      this.data$
+      self.data$
         .pipe(
-          takeUntil(this.destroy$),
-          tap(({ msgArray }) => {
-            // Update array with new data
+          takeUntil(self.destroy$),
+          tap(({ msgTable }) => {
+            console.log("updating message table");
+            self.msgTable = msgTable;
+            p.redraw();
           }),
           distinctUntilChanged((prev, curr) => prev.stationId === curr.stationId),
           switchMap(
             () => of(null)
-            // Change to new station
+            // this.doTransition$(p, trainId, lineId).pipe(tap(() => this.startMsgTimer(p)))
           )
         )
         .subscribe();
@@ -98,7 +114,6 @@ class StationBoard extends DotMatrix {
       // Handle component destruction
       self.destroy$.subscribe(() => {
         console.log("destroying...");
-        this.isDestroyed = true;
       });
 
       // console.log("DotMatrixSketch: p5.js setup function executed!");
@@ -111,12 +126,13 @@ class StationBoard extends DotMatrix {
 
       // Draw the current state
       this.drawBoard(p);
-      this.drawMessage(p);
+      this.drawTable(p);
 
       // console.log("DotMatrixSketch: p5.js draw function executed!");
     };
   };
 
+  // TODO: what if alternating rows slid in from opposite sides?
   slideMessageIn$ = (p, /* TODO */ direction) => {
     console.log("sliding message in...");
 
@@ -138,35 +154,94 @@ class StationBoard extends DotMatrix {
   };
 
   /**
-   * Draw the current message on the dot matrix board
-   * Handles regular display and scrolling behavior
+   * Draw the current message table on the dot matrix board
    * @param {object} p - p5.js instance
    */
-  drawMessage = (p) => {
-    let { startX, startY } = this.calcStartPos();
+  drawTable = (p) => {
+    // Draw table headings
+    this.renderRow(p, this.tableHead, 0, dotColor.heading);
 
-    let msgWidth = 0;
-    for (const char of this.currentMsg) {
-      const charStartX = startX + msgWidth;
-      // TODO: change color based on heading or not
-      this.renderChar(p, char, charStartX, startY, dotColor.on);
+    // Draw table data rows
+    this.msgTable?.entries()?.forEach(([index, row]) => this.renderRow(p, row, index + 1, dotColor.on));
+  };
 
-      msgWidth += dotUnit * (charWidth + charGap);
+  /**
+   *
+   * @param {*} p
+   * @param {*} row
+   * @param {*} rowIndex
+   * @param {*} color
+   */
+  renderRow = (p, row, rowIndex, color) => {
+    let adjustedColIndex = 0;
+
+    for (const [colIndex, data] of row.entries()) {
+      // Skip rendering the hidden column
+      if (this.columnHidden && colIndex === this.columnToHide) {
+        continue;
+      }
+
+      let { startX, startY } = this.calcStartPos(rowIndex, adjustedColIndex);
+      let charStartX = startX;
+
+      for (const char of data.slice(0, maxMsgLength)) {
+        this.renderChar(p, char, charStartX, startY, color);
+        charStartX += (charWidth + charGap) * dotUnit;
+      }
+
+      adjustedColIndex++;
     }
   };
 
   /**
-   * Calculate the starting position for drawing the message
-   * Centers short messages and positions overflow messages for scrolling
+   * Calculate the starting position for drawing the message based on provided row and column
+   * Modified from ChatGPT
    * @returns {Object} Object containing startX and startY coordinates in pixels
    */
-  calcStartPos = () => {
-    let startX = dotRadius + msgMargin * dotUnit;
-    let startY = dotUnit * (paddingY + msgMargin) + dotRadius;
+  calcStartPos = (row, adjustedCol) => {
+    let startX = (paddingX + msgMargin) * dotUnit;
+    let startY = (paddingY + msgMargin + row * (charHeight + rowGap)) * dotUnit;
 
-    // TODO: calculate position based on row/column
+    // Create adjusted layout and headings without the hidden column
+    const adjustedLayout = [...COLUMN_LAYOUT].filter((_, i) => !this.columnHidden || this.columnToHide !== i);
+    const adjustedHeadings = [...this.tableHead].filter((_, i) => !this.columnHidden || this.columnToHide !== i);
+
+    // Calculate hug widths based on adjusted columns
+    const hugWidths = adjustedHeadings.map((text, i) => (adjustedLayout[i] === "hug" ? (this.getMsgLength(text) + colGap) * dotUnit : 0));
+    const totalHugWidth = hugWidths.reduce((sum, w) => sum + w, 0);
+
+    // Count fill columns
+    const fillCols = adjustedLayout.filter((type) => type === "fill").length;
+    const fillWidth = fillCols > 0 ? (this.numCols * dotUnit - totalHugWidth) / fillCols : 0;
+
+    // Compute x offset by summing widths of previous columns
+    for (let i = 0; i < adjustedCol; i++) {
+      startX += adjustedLayout[i] === "hug" ? hugWidths[i] : fillWidth;
+    }
 
     return { startX, startY };
+  };
+
+  calcMinBoardWidth = () => {
+    let tableLength = 0;
+
+    // Create adjusted layout and headings without the hidden column
+    const adjustedLayout = [...COLUMN_LAYOUT].filter((_, i) => !this.columnHidden || this.columnToHide !== i);
+    const adjustedHeadings = [...this.tableHead].filter((_, i) => !this.columnHidden || this.columnToHide !== i);
+
+    const visibleColCount = adjustedHeadings.length;
+
+    for (let i = 0; i < visibleColCount; i++) {
+      const message = adjustedLayout[i] === "hug" ? adjustedHeadings[i] : "0".repeat(maxMsgLength);
+
+      tableLength += this.getMsgLength(message);
+
+      if (i < visibleColCount - 1) {
+        tableLength += colGap;
+      }
+    }
+
+    return tableLength + 2 * (paddingX + msgMargin);
   };
 
   /**

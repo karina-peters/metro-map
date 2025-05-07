@@ -126,6 +126,19 @@ class SystemService {
     return await response.json().then((r) => r.data.filter((t) => t.DestinationStationCode !== null).sort((a, b) => a.TrainId - b.TrainId));
   }
 
+  async fetchArrivals(station) {
+    const response = await fetch(`/api/arrivals/${station}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+
+    return await response.json().then((r) => r.data);
+  }
+
   async _loadStationNames() {
     const stations = await this.fetchStations();
 

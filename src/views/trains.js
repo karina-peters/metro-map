@@ -67,7 +67,7 @@ const drawTrainSign = async () => {
     let msgArray = trainPositions.length > 0 ? await getCurrentMsgList(selectedTrain) : [defaultMsg];
 
     // Draw board with p5.js
-    trainBoard = new TrainBoard(msgArray, selectedTrain?.LineCode, selectedTrain?.trainId, boardTarget);
+    trainBoard = new TrainBoard(boardTarget, msgArray, selectedTrain?.LineCode, selectedTrain?.trainId);
     new p5(trainBoard.sketch, boardTarget);
 
     // Update messages for selected train
@@ -76,7 +76,7 @@ const drawTrainSign = async () => {
         const labelTarget = document.querySelector(".train-label");
         labelTarget.textContent = `Train ${selectedId}`;
 
-        selectedTrain = trainPositions.find((t) => t.TrainId === selectedId);
+        selectedTrain = trainPositions.find((t) => t.TrainId === selectedId) || trainPositions[0];
         msgArray = await getCurrentMsgList(selectedTrain);
       } else {
         msgArray = [defaultMsg];
@@ -102,7 +102,7 @@ const drawTrainList = async () => {
       trainPositions.map((train) => {
         const button = document.createElement("button");
         button.id = `ID${train.TrainId}`;
-        button.classList.add("btn-dark", "btn-train");
+        button.classList.add("btn-dark", "btn-train", `line-${train.LineCode}`);
         button.textContent = train.TrainId;
         button.value = train.TrainId;
 

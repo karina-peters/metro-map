@@ -1,5 +1,6 @@
 import "./styles/map.css";
 import "./styles/trains.css";
+import "./styles/stations.css";
 import "./styles.css";
 
 import { state$ } from "./helpers/state.js";
@@ -14,7 +15,7 @@ import { pause as pauseTrains, render as renderTrains } from "./views/trains.js"
 const views = {
   "home": { render: renderHome },
   "map": { render: renderMap, pause: pauseMap },
-  "station": { render: renderStations },
+  "station": { render: renderStations, pause: pauseMap },
   "line": { render: renderLines },
   "train": { render: renderTrains, pause: pauseTrains },
 };

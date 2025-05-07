@@ -4,9 +4,9 @@ const headingText = "Home";
 const template = () => {
   return `
     <div class="button-wrapper">
-      <button id="btn-map">Map</button>
+      <button id="btn-map" disabled>Map</button>
       <button id="btn-stn">Stations</button>
-      <button id="btn-line">Lines</button>
+      <button id="btn-line" disabled>Lines</button>
       <button id="btn-train">Trains</button>
     </div>
   `;

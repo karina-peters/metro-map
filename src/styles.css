@@ -8,6 +8,12 @@
   --color-background: black;
   --color-text-dark: black;
   --color-text-light: #faf9f6;
+  --line-GR: #38b000;
+  --line-RD: #d90429;
+  --line-OR: #fb6107;
+  --line-YL: #ffd700;
+  --line-SV: #b2b4b2;
+  --line-BL: #3772ff;
   --border-radius: 0.5rem;
 }
 
@@ -50,6 +56,30 @@ button:hover {
 }
 .btn-dark:hover {
   background-color: #333;
+}
+.btn-dark.line-GR:hover {
+  background-color: var(--line-GR);
+  color: var(--color-text-light);
+}
+.btn-dark.line-RD:hover {
+  background-color: var(--line-RD);
+  color: var(--color-text-light);
+}
+.btn-dark.line-BL:hover {
+  background-color: var(--line-BL);
+  color: var(--color-text-light);
+}
+.btn-dark.line-OR:hover {
+  background-color: var(--line-OR);
+  color: var(--color-text-dark);
+}
+.btn-dark.line-YL:hover {
+  background-color: var(--line-YL);
+  color: var(--color-text-dark);
+}
+.btn-dark.line-SV:hover {
+  background-color: var(--line-SV);
+  color: var(--color-text-dark);
 }
 .btn-dark.selected {
   pointer-events: none;

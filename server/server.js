@@ -97,6 +97,27 @@ app.get("/api/trains", async (req, res) => {
   }
 });
 
+
+app.get("/api/arrivals/:station", async (req, res) => {
+  console.log("fetching arrivals...");
+
+  try {
+    const response = await fetch(getUrl(`StationPrediction.svc/json/GetPrediction/${req.params.station}`, { contentType: "json" }), {
+      method: "GET",
+      headers: getHeaders(),
+    });
+
+    const data = await response.json().then((json) => json["Trains"] || []);
+    if (!data || data.length === 0) {
+      throw new Error("data is null or empty");
+    }
+
+    return Response.OK(res, data);
+  } catch (error) {
+    return Response.Error(res, 500, error.message);
+  }
+});
+
 // TODO: maybe add another static data file for lines? Need to return some more data
 app.get("/api/lines", async (req, res) => {
   console.log("fetching lines...");
