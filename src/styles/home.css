@@ -1,0 +1,17 @@
+.content-target {
+  margin: 0;
+}
+
+.hero {
+  display: flex;
+  flex-flow: row;
+  flex: 1;
+  align-self: center;
+  align-items: center;
+}
+
+.title {
+  font-size: 6rem;
+  text-transform: uppercase;
+  margin: 0 0 1rem 0;
+}

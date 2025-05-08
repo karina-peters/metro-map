@@ -36,6 +36,7 @@ main {
   display: flex;
   flex-flow: column;
   padding: 0;
+  flex: 1;
 }
 
 button {

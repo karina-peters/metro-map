@@ -1,6 +1,7 @@
 import "./styles/map.css";
 import "./styles/trains.css";
 import "./styles/stations.css";
+import "./styles/home.css";
 import "./styles.css";
 
 import { state$ } from "./helpers/state.js";
@@ -33,10 +34,10 @@ const main = () => {
         currentView.pause();
       }
 
-      // Show/hide back button
-      const backButton = document.querySelector(".btn-back");
-      backButton.removeAttribute("hidden");
-      state.viewId === "home" ? backButton.setAttribute("hidden", true) : backButton.removeAttribute("hidden");
+      // Show/hide header
+      const header = document.querySelector(".header-target");
+      header.removeAttribute("hidden");
+      state.viewId === "home" ? header.setAttribute("hidden", true) : header.removeAttribute("hidden");
 
       // Render new view
       await newView.render();

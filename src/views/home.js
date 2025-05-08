@@ -3,11 +3,16 @@ import { navigateTo } from "../helpers/state.js";
 const headingText = "Home";
 const template = () => {
   return `
-    <div class="button-wrapper">
-      <button id="btn-map" disabled>Map</button>
-      <button id="btn-stn">Stations</button>
-      <button id="btn-line" disabled>Lines</button>
-      <button id="btn-train">Trains</button>
+    <div class="hero">
+      <div class="wrapper">
+        <h1 class="title">Metro Visualizer</h1>
+        <div class="button-wrapper">
+          <button id="btn-stn">Stations</button>
+          <button id="btn-train">Trains</button>
+          <button id="btn-map" disabled>Map</button>
+          <button id="btn-line" disabled>Lines</button>
+        </div>
+      </div>
     </div>
   `;
 };

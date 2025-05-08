@@ -5,7 +5,8 @@ import { metroSystem, REFRESH_RATE } from "../helpers/system.js";
 import TrainBoard from "../components/trainBoard.js";
 
 const headingText = "Trains";
-const defaultMsg = "No trains running!";
+const emptyMsg = "No trains running!";
+const errorMsg = "Data fetch error :(";
 
 const manualRefresh$ = new Subject();
 const pauseRefresh$ = new Subject();
@@ -23,12 +24,6 @@ const template = () => {
   `;
 };
 
-(async () => {
-  // Fetch data
-  trainPositions = await metroSystem.fetchTrainPositions();
-  selectedId = trainPositions[0]?.TrainId;
-})();
-
 export const render = async () => {
   // Render heading
   const textElement = document.querySelector(".header-target .heading-text");
@@ -39,7 +34,7 @@ export const render = async () => {
   container.innerHTML = template();
 
   // Refresh content
-  timer$.subscribe(async () => (trainPositions = await metroSystem.fetchTrainPositions()));
+  timer$.subscribe(async () => (trainPositions = await getTrainPositions()));
 
   await drawTrainSign();
   await drawTrainList();
@@ -63,8 +58,17 @@ const attachEventListeners = () => {};
 const drawTrainSign = async () => {
   try {
     const boardTarget = document.querySelector(".board-target");
-    let selectedTrain = trainPositions.find((t) => t.TrainId === selectedId);
-    let msgArray = trainPositions.length > 0 ? await getCurrentMsgList(selectedTrain) : [defaultMsg];
+    let selectedTrain = trainPositions?.find((t) => t.TrainId === selectedId);
+
+    // Set board messages
+    let msgArray = [];
+    if (trainPositions === null) {
+      msgArray = [errorMsg];
+    } else if (trainPositions.length === 0) {
+      msgArray = [emptyMsg];
+    } else {
+      msgArray = await getCurrentMsgList(selectedTrain);
+    }
 
     // Draw board with p5.js
     trainBoard = new TrainBoard(boardTarget, msgArray, selectedTrain?.LineCode, selectedTrain?.trainId);
@@ -72,14 +76,15 @@ const drawTrainSign = async () => {
 
     // Update messages for selected train
     merge(timer$, manualRefresh$).subscribe(async () => {
-      if (trainPositions.length > 0) {
+      if (trainPositions === null) {
+        msgArray = [errorMsg];
+      } else if (trainPositions.length === 0) {
+        msgArray = [emptyMsg];
+      } else {
         const labelTarget = document.querySelector(".train-label");
         labelTarget.textContent = `Train ${selectedId}`;
 
-        selectedTrain = trainPositions.find((t) => t.TrainId === selectedId) || trainPositions[0];
-        msgArray = await getCurrentMsgList(selectedTrain);
-      } else {
-        msgArray = [defaultMsg];
+        selectedTrain = trainPositions?.find((t) => t.TrainId === selectedId) || trainPositions[0];
       }
 
       trainBoard.data$.next({ msgArray, lineId: selectedTrain?.LineCode, trainId: selectedTrain?.TrainId });
@@ -96,6 +101,10 @@ const drawTrainList = async () => {
     const listTarget = document.querySelector(".list-target");
 
     timer$.subscribe(async () => {
+      if (trainPositions === null) {
+        return;
+      }
+
       listTarget.innerHTML = "";
 
       // Draw a button for each train
@@ -158,6 +167,15 @@ const getCurrentMsgList = async (train) => {
   return msgArray;
 };
 
+const getTrainPositions = async () => {
+  try {
+    const positionData = await metroSystem.fetchTrainPositions();
+    return positionData;
+  } catch {
+    return null;
+  }
+};
+
 /**
  * Deselects currently selected train button and selects button for provided train id
  * @param {string} trainId - Train to display
@@ -177,3 +195,9 @@ const selectButton = (trainId) => {
 
   selectedId = trainId;
 };
+
+(async () => {
+  // Fetch data
+  trainPositions = await getTrainPositions();
+  selectedId = trainPositions && trainPositions[0] ? trainPositions[0].TrainId : "";
+})();
