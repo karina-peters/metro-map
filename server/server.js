@@ -1,8 +1,10 @@
 import express from "express";
 import fetch from "node-fetch";
+import path from "path";
 import bodyParser from "body-parser";
 
 import { configDotenv } from "dotenv";
+import { fileURLToPath } from 'url';
 
 import { getHeaders, getUrl, Response } from "./utils.js";
 import { preloadData, lineToCktList, lineToRegSeqMap } from "./cache.js";
@@ -10,8 +12,11 @@ import { preloadData, lineToCktList, lineToRegSeqMap } from "./cache.js";
 import regionData from "./data/regions.json" with { type: "json" };
 import stationData from "./data/stations.json" with { type: "json" };
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Load .env file
-configDotenv();
+configDotenv({ path: path.resolve(__dirname, ".env") });
 
 const app = express();
 const port = process.env.PORT || 3000;

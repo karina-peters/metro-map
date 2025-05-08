@@ -1,8 +1,3 @@
-import { configDotenv } from "dotenv";
-
-// Load .env file
-configDotenv();
-
 export const getHeaders = () => {
   return { "api_key": process.env.WMATA_API_KEY };
 };
