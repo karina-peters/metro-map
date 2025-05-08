@@ -254,8 +254,8 @@ class StationBoard extends DotMatrix {
         return;
       }
 
-      // Skip rendering the hidden column or undefined strings
-      if (!str || (this.columnHidden && colIndex === this.columnToHide)) {
+      // Skip rendering the hidden column or null strings
+      if (str === null || (this.columnHidden && colIndex === this.columnToHide)) {
         continue;
       }
 

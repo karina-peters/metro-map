@@ -7,7 +7,7 @@ import StationBoard from "../components/stationBoard.js";
 import { getOrInitializeMapValue } from "../helpers/helpers.js";
 
 const headingText = "Stations";
-const errorMsg = [":(", "", "Data fetch error", ""];
+const errorMsg = [":(", "", "Error", ""];
 const emptyMsg = [":(", "", "No trains", ""];
 
 const manualRefresh$ = new Subject();
