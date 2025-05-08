@@ -1,8 +1,12 @@
-import { tap, switchMap, Subject, takeUntil, distinctUntilChanged, of } from "rxjs";
+import { tap, switchMap, Subject, takeUntil, distinctUntilChanged, of, delay, concatMap, finalize, from, last, iif } from "rxjs";
 
 import { backgroundColor, dotColor } from "../helpers/colors.js";
 import { fontData } from "../helpers/dotFont.js";
 import DotMatrix from "../helpers/dotMatrix.js";
+
+// Timing (ms)
+const typeSpeed = 20;
+const transitionDelay = 200;
 
 // Sizing (px)
 const dotRadius = 4;
@@ -18,18 +22,18 @@ const paddingY = 0;
 const msgMargin = 2;
 
 // Table Dimensions (dot count)
-const COLUMN_LAYOUT = ["hug", "hug", "fill", "hug"];
 const colGap = 4;
 const rowGap = 4;
 const maxMsgLength = 10;
+
+const COLUMN_LAYOUT = ["hug", "hug", "fill", "hug"];
 
 class StationBoard extends DotMatrix {
   /**
    * Create new StationBoard instance
    * @param {Array<string>} tableHead - Array of column headers
    * @param {Array<string>} msgTable - Array of messages to draw
-   * @param {string} lineId - Line id for the color
-   * @param {string} trainId - Train id to track changes
+   * @param {string} stationId - Station to track changes
    */
   constructor(parentElt, tableHead, msgTable, stationId, hiddenCol = null) {
     super(0, 0, dotRadius, dotGap);
@@ -44,6 +48,16 @@ class StationBoard extends DotMatrix {
     this.numTableCols = this.tableHead.length;
     this.columnToHide = hiddenCol;
     this.columnHidden = false;
+
+    // Board State
+    this.isInTransition = true;
+    this.transitionPhase = null;
+    this.typewriterState = {
+      rowIndex: 0,
+      colIndex: 0,
+      currentChar: 0,
+      isActive: true,
+    };
 
     // Sizing
     this.parentElt = parentElt;
@@ -94,20 +108,18 @@ class StationBoard extends DotMatrix {
         p.redraw();
       };
 
-      // Start the message timer
+      // Handle data updates
       self.data$
         .pipe(
           takeUntil(self.destroy$),
           tap(({ msgTable }) => {
             console.log("updating message table");
             self.msgTable = msgTable;
-            p.redraw();
           }),
-          distinctUntilChanged((prev, curr) => prev.stationId === curr.stationId),
-          switchMap(
-            () => of(null)
-            // this.doTransition$(p, trainId, lineId).pipe(tap(() => this.startMsgTimer(p)))
-          )
+          switchMap(({ stationId }) => {
+            const obs$ = this.stationId === stationId ? of(null) : this.doTransition$(p, stationId);
+            return obs$.pipe(tap(() => p.redraw()));
+          })
         )
         .subscribe();
 
@@ -126,31 +138,87 @@ class StationBoard extends DotMatrix {
 
       // Draw the current state
       this.drawBoard(p);
-      this.drawTable(p);
+
+      if (!this.isInTransition || this.transitionPhase === "in") {
+        this.drawTable(p);
+      }
 
       // console.log("DotMatrixSketch: p5.js draw function executed!");
     };
   };
 
-  // TODO: what if alternating rows slid in from opposite sides?
-  slideMessageIn$ = (p, /* TODO */ direction) => {
-    console.log("sliding message in...");
+  /**
+   * Starts transition animation for newly selected station
+   * @param {Object} p - p5.js instance
+   * @param {string} newStationId - station code of the newly selected station
+   * @returns an Observable of the transition animation
+   */
+  doTransition$ = (p, newStationId) => {
+    console.log("starting transition");
+    this.isInTransition = true;
+    this.clearSubscriptions();
 
-    return this.createScrollAnimation(p, {
-      speed: scrollSpeed,
-      step: scrollStep,
-      totalDistance: charHeight + paddingY + msgMargin,
-      onStart: () => {
-        this.isSliding = true;
-      },
-      onStep: () => {
-        this.slideOffset += scrollStep;
-      },
-      onFinalize: () => {
-        this.isSliding = false;
-        this.slideOffset = 0;
-      },
-    });
+    return of(null).pipe(
+      takeUntil(this.destroy$),
+      tap(() => {
+        this.transitionPhase = "change";
+        console.log(`changing from station ${this.stationId} to ${newStationId}`);
+
+        this.stationId = newStationId;
+        p.redraw();
+      }),
+      delay(transitionDelay),
+      switchMap(() => {
+        this.transitionPhase = "in";
+
+        // Skip exit animation if no new station selected
+        return newStationId === null ? of(null) : this.typeContent$(p);
+      }),
+      finalize(() => {
+        this.isInTransition = false;
+      })
+    );
+  };
+
+  typeContent$ = (p) => {
+    console.log("typing message in...");
+    this.typewriterState.isActive = true;
+    this.clearSubscriptions();
+
+    const table = [this.tableHead, ...this.msgTable];
+
+    return from(table).pipe(
+      concatMap((row, rowIndex) => this.typeRow$(p, row, rowIndex)),
+      last(),
+      finalize(() => (this.typewriterState.isActive = false))
+    );
+  };
+
+  typeRow$ = (p, row, rowIndex) => {
+    this.typewriterState.rowIndex = rowIndex;
+
+    return of(row).pipe(
+      concatMap((cols) => from(cols)),
+      concatMap((col, colIndex) => this.typeCell$(p, col, colIndex))
+    );
+  };
+
+  typeCell$ = (p, text, colIndex) => {
+    this.typewriterState.colIndex = colIndex;
+    this.typewriterState.currentChar = 0;
+
+    const chars = Array.from(text || "");
+    return from(chars).pipe(
+      concatMap((char) =>
+        of(char).pipe(
+          delay(typeSpeed),
+          tap(() => {
+            this.typewriterState.currentChar += 1;
+            p.redraw();
+          })
+        )
+      )
+    );
   };
 
   /**
@@ -174,17 +242,31 @@ class StationBoard extends DotMatrix {
    */
   renderRow = (p, row, rowIndex, color) => {
     let adjustedColIndex = 0;
+    const typewriter = this.typewriterState;
 
-    for (const [colIndex, data] of row.entries()) {
-      // Skip rendering the hidden column
-      if (this.columnHidden && colIndex === this.columnToHide) {
+    // Skip rendering untyped rows
+    if (typewriter.isActive && rowIndex > typewriter.rowIndex) {
+      return;
+    }
+
+    for (const [colIndex, str] of row.entries()) {
+      // Skip rendering untyped cells
+      if (typewriter.isActive && rowIndex === typewriter.rowIndex && colIndex > typewriter.colIndex) {
+        return;
+      }
+
+      // Skip rendering the hidden column or undefined strings
+      if (!str || (this.columnHidden && colIndex === this.columnToHide)) {
         continue;
       }
 
       let { startX, startY } = this.calcStartPos(rowIndex, adjustedColIndex);
       let charStartX = startX;
 
-      for (const char of data.slice(0, maxMsgLength)) {
+      const isTyping = typewriter.isActive && typewriter.rowIndex === rowIndex && typewriter.colIndex === colIndex;
+      const charLimit = isTyping ? typewriter.currentChar : maxMsgLength;
+
+      for (const char of str.slice(0, charLimit)) {
         this.renderChar(p, char, charStartX, startY, color);
         charStartX += (charWidth + charGap) * dotUnit;
       }

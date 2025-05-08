@@ -126,8 +126,8 @@ class SystemService {
     return await response.json().then((r) => r.data.filter((t) => t.DestinationStationCode !== null).sort((a, b) => a.TrainId - b.TrainId));
   }
 
-  async fetchArrivals(station) {
-    const response = await fetch(`/api/arrivals/${station}`, {
+  async fetchArrivals(stations) {
+    const response = await fetch(`/api/arrivals/${stations.join(",")}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
