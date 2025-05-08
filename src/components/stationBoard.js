@@ -189,7 +189,6 @@ class StationBoard extends DotMatrix {
 
     return from(table).pipe(
       concatMap((row, rowIndex) => this.typeRow$(p, row, rowIndex)),
-      last(),
       finalize(() => (this.typewriterState.isActive = false))
     );
   };

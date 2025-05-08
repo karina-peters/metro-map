@@ -7,7 +7,8 @@ import StationBoard from "../components/stationBoard.js";
 import { getOrInitializeMapValue } from "../helpers/helpers.js";
 
 const headingText = "Stations";
-const defaultMsg = ":(";
+const errorMsg = [":(", "", "Data fetch error", ""];
+const emptyMsg = [":(", "", "No trains", ""];
 
 const manualRefresh$ = new Subject();
 const pauseRefresh$ = new Subject();
@@ -82,29 +83,44 @@ const attachEventListeners = () => {
 const drawStationBoard = async () => {
   try {
     const boardTarget = document.querySelector(`.board-target#board-${selectedGroup}`);
-
     arrivals = await getUpdatedArrivals();
-    let msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
-    stationBoard = new StationBoard(boardTarget, header, msgTable, selectedId, 1);
 
-    // Initialize p5 sketch
+    // Set board messages
+    let msgTable = [];
+    if (arrivals === null) {
+      msgTable = [errorMsg];
+    } else if (arrivals.length === 0) {
+      msgTable = [emptyMsg];
+    } else {
+      msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
+    }
+
+    // Draw board with p5.js
+    stationBoard = new StationBoard(boardTarget, header, msgTable, selectedId, 1);
     new p5(stationBoard.sketch, boardTarget);
 
     // Update table for selected station group
     merge(timer$, manualRefresh$).subscribe(async () => {
-      const station = stations.entries().find(([_, value]) => selectedId === value.join(""));
-      const labelTarget = document.querySelector(".station-label");
-      labelTarget.textContent = `${station[0]}`;
-
-      const platformButton = document.querySelector(".btn-platforms");
-      if (station[1].length > 1) {
-        platformButton.removeAttribute("hidden");
+      if (arrivals === null) {
+        msgTable = [errorMsg];
+      } else if (arrivals.length === 0) {
+        msgTable = [emptyMsg];
       } else {
-        platformButton.setAttribute("hidden", true);
+        const station = stations.entries().find(([_, value]) => selectedId === value.join(""));
+        const labelTarget = document.querySelector(".station-label");
+        labelTarget.textContent = `${station[0]}`;
+
+        const platformButton = document.querySelector(".btn-platforms");
+        if (station[1].length > 1) {
+          platformButton.removeAttribute("hidden");
+        } else {
+          platformButton.setAttribute("hidden", true);
+        }
+
+        arrivals = await getUpdatedArrivals();
+        msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
       }
 
-      arrivals = await getUpdatedArrivals();
-      const msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
       stationBoard.data$.next({ msgTable, stationId: selectedId });
     });
   } catch (error) {
@@ -164,21 +180,27 @@ const getUpdatedArrivals = async () => {
 
       arrivals.push(arrival);
     }
-  } catch {}
 
-  return arrivalMap;
+    return arrivalMap;
+  } catch {
+    return null;
+  }
 };
 
 const getStations = async () => {
-  const stationData = await metroSystem.fetchStations();
-  const stationMap = new Map();
+  try {
+    const stationData = await metroSystem.fetchStations();
+    const stationMap = new Map();
 
-  for (const station of stationData) {
-    const stationCodes = getOrInitializeMapValue(stationMap, station.name, []);
-    stationCodes.push(station.code);
+    for (const station of stationData) {
+      const stationCodes = getOrInitializeMapValue(stationMap, station.name, []);
+      stationCodes.push(station.code);
+    }
+
+    return stationMap;
+  } catch {
+    return null;
   }
-
-  return stationMap;
 };
 
 /**
@@ -187,11 +209,10 @@ const getStations = async () => {
  * @returns an Array of message strings
  */
 const getCurrentMsgTable = (platformId, groupId) => {
-  console.log(platformId, groupId);
   const station = arrivals.get(platformId.toString());
   const group = station?.get(groupId.toString());
 
-  return group ? group.map((a) => [a.Line, a.Car, a.Destination, a.Min]) : [[defaultMsg]];
+  return group ? group.map((a) => [a.Line, a.Car, a.Destination, a.Min]) : [[errorMsg]];
 };
 
 /**
