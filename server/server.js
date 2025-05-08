@@ -2,6 +2,7 @@ import express from "express";
 import fetch from "node-fetch";
 import path from "path";
 import bodyParser from "body-parser";
+import cors from "cors";
 
 import { configDotenv } from "dotenv";
 import { fileURLToPath } from 'url';
@@ -27,6 +28,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static("public"));
+
+app.use(cors({ origin: "*" }));
 
 // Fetching static data files
 app.get("/api/regions/:region", async (req, res) => {

@@ -2287,6 +2287,7 @@ var REGIONS = {
   ALL: "All",
   DC: "DC"
 };
+var BASE_URL = "http://localhost:3000" || 0;
 var SystemService = /*#__PURE__*/function () {
   function SystemService() {
     _classCallCheck(this, SystemService);
@@ -2457,7 +2458,7 @@ var SystemService = /*#__PURE__*/function () {
           while (1) switch (_context5.prev = _context5.next) {
             case 0:
               _context5.next = 2;
-              return fetch("/api/stations", {
+              return fetch("".concat(BASE_URL, "/api/stations"), {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json"
@@ -2497,7 +2498,7 @@ var SystemService = /*#__PURE__*/function () {
           while (1) switch (_context6.prev = _context6.next) {
             case 0:
               _context6.next = 2;
-              return fetch("/api/lines", {
+              return fetch("".concat(BASE_URL, "/api/lines"), {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json"
@@ -2542,7 +2543,7 @@ var SystemService = /*#__PURE__*/function () {
               params = _args7.length > 0 && _args7[0] !== undefined ? _args7[0] : undefined;
               queryParams = new URLSearchParams(params);
               _context7.next = 4;
-              return fetch("/api/circuits".concat(params ? "?".concat(queryParams) : ""), {
+              return fetch("".concat(BASE_URL, "/api/circuits").concat(params ? "?".concat(queryParams) : ""), {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json"
@@ -2582,7 +2583,7 @@ var SystemService = /*#__PURE__*/function () {
           while (1) switch (_context8.prev = _context8.next) {
             case 0:
               _context8.next = 2;
-              return fetch("/api/trains", {
+              return fetch("".concat(BASE_URL, "/api/trains"), {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json"
@@ -2626,7 +2627,7 @@ var SystemService = /*#__PURE__*/function () {
           while (1) switch (_context9.prev = _context9.next) {
             case 0:
               _context9.next = 2;
-              return fetch("/api/arrivals/".concat(stations.join(",")), {
+              return fetch("".concat(BASE_URL, "/api/arrivals/").concat(stations.join(",")), {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json"

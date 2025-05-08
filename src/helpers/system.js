@@ -6,6 +6,8 @@ export const REGIONS = {
   DC: "DC",
 };
 
+const BASE_URL = process.env.VITE_API_URL || "http://localhost:3000";
+
 class SystemService {
   constructor() {
     this.dataPromise = null;
@@ -74,7 +76,7 @@ class SystemService {
   }
 
   async fetchStations() {
-    const response = await fetch("/api/stations", {
+    const response = await fetch(`${BASE_URL}/api/stations`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -87,7 +89,7 @@ class SystemService {
   }
 
   async fetchLines() {
-    const response = await fetch("/api/lines", {
+    const response = await fetch(`${BASE_URL}/api/lines`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -101,7 +103,7 @@ class SystemService {
 
   async fetchCircuits(params = undefined) {
     const queryParams = new URLSearchParams(params);
-    const response = await fetch(`/api/circuits${params ? `?${queryParams}` : ""}`, {
+    const response = await fetch(`${BASE_URL}/api/circuits${params ? `?${queryParams}` : ""}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -114,7 +116,7 @@ class SystemService {
   }
 
   async fetchTrainPositions() {
-    const response = await fetch("/api/trains", {
+    const response = await fetch(`${BASE_URL}/api/trains`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
@@ -127,7 +129,7 @@ class SystemService {
   }
 
   async fetchArrivals(stations) {
-    const response = await fetch(`/api/arrivals/${stations.join(",")}`, {
+    const response = await fetch(`${BASE_URL}/api/arrivals/${stations.join(",")}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
