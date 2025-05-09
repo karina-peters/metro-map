@@ -140,15 +140,6 @@ class DotMatrix {
 
     return msgWidth > visibleWidth;
   };
-
-  setTextField = ({ top, right, bottom, left }) => {
-    this.textField = { top, right, bottom, left };
-  };
-
-  setBoardSize = (numRows, numCols) => {
-    this.numRows = numRows;
-    this.numCols = numCols;
-  };
 }
 
 export default DotMatrix;

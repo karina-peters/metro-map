@@ -1,4 +1,4 @@
-import { tap, switchMap, Subject, takeUntil, distinctUntilChanged, of, delay, concatMap, finalize, from, last, iif } from "rxjs";
+import { tap, switchMap, Subject, takeUntil, of, delay, concatMap, finalize, from } from "rxjs";
 
 import { backgroundColor, dotColor } from "../helpers/colors.js";
 import { fontData } from "../helpers/dotFont.js";
@@ -11,7 +11,6 @@ const transitionDelay = 200;
 // Sizing (px)
 const dotRadius = 4;
 const dotGap = 2;
-const dotUnit = dotRadius * 2 + dotGap;
 
 // Board Dimensions (dot count)
 const charGap = 1;
@@ -61,33 +60,35 @@ class StationBoard extends DotMatrix {
 
     // Sizing
     this.parentElt = parentElt;
-    this.numCols = Math.max(this.calcMinBoardWidth(), Math.floor(this.parentElt.clientWidth / dotUnit));
+    this.numCols = Math.max(this.calcMinBoardWidth(), Math.floor(this.parentElt.clientWidth / this.dotUnit));
     this.numRows = this.numTableRows * (charHeight + rowGap) - rowGap + 2 * (msgMargin + paddingY);
-    this.breakpoint = 1375;
+    this.breakpointHide = 1375;
+    this.breakpointScale = this.calcMinBoardWidth() * this.dotUnit - this.dotGap - /* body padding */ 64;
+    this.scale = 1;
 
     this.setCanvasSize();
   }
 
   setCanvasSize = () => {
-    // TODO - Handle breakpoints
-    if (window.innerWidth < this.breakpoint) {
-      this.columnHidden = true;
+    // Handle responsiveness
+    const baseWidth = this.numCols * this.dotUnit - this.dotGap;
+    this.columnHidden = window.innerWidth < this.breakpointHide;
+    if (window.innerWidth < this.breakpointScale) {
+      this.scale = (window.innerWidth - /* body padding */ 64) / baseWidth;
     } else {
-      this.columnHidden = false;
+      this.scale = 1;
+      this.numCols = Math.max(this.calcMinBoardWidth(), Math.floor(this.parentElt.clientWidth / this.dotUnit));
     }
 
-    this.numCols = Math.max(this.calcMinBoardWidth(), Math.floor(this.parentElt.clientWidth / dotUnit));
-
-    this.setBoardSize(this.numRows, this.numCols);
-    this.setTextField({
+    this.textField = {
       top: paddingY + msgMargin,
-      right: (this.numCols - paddingX - msgMargin) * dotUnit - dotGap,
-      bottom: (this.numRows - paddingY - msgMargin) * dotUnit - dotGap,
-      left: (paddingX + msgMargin) * dotUnit,
-    });
+      right: (this.numCols - paddingX - msgMargin) * this.dotUnit - this.dotGap,
+      bottom: (this.numRows - paddingY - msgMargin) * this.dotUnit - this.dotGap,
+      left: (paddingX + msgMargin) * this.dotUnit,
+    };
 
-    const width = this.numCols * dotUnit - dotGap;
-    const height = this.numRows * dotUnit - dotGap;
+    const width = this.scale * this.numCols * this.dotUnit - this.dotGap;
+    const height = this.scale * this.numRows * this.dotUnit - this.dotGap;
 
     this.canvasSize = { width, height };
   };
@@ -267,7 +268,7 @@ class StationBoard extends DotMatrix {
 
       for (const char of str.slice(0, charLimit)) {
         this.renderChar(p, char, charStartX, startY, color);
-        charStartX += (charWidth + charGap) * dotUnit;
+        charStartX += (charWidth + charGap) * this.dotUnit;
       }
 
       adjustedColIndex++;
@@ -280,20 +281,22 @@ class StationBoard extends DotMatrix {
    * @returns {Object} Object containing startX and startY coordinates in pixels
    */
   calcStartPos = (row, adjustedCol) => {
-    let startX = (paddingX + msgMargin) * dotUnit;
-    let startY = (paddingY + msgMargin + row * (charHeight + rowGap)) * dotUnit;
+    let startX = (paddingX + msgMargin) * this.dotUnit;
+    let startY = (paddingY + msgMargin + row * (charHeight + rowGap)) * this.dotUnit;
 
     // Create adjusted layout and headings without the hidden column
     const adjustedLayout = [...COLUMN_LAYOUT].filter((_, i) => !this.columnHidden || this.columnToHide !== i);
     const adjustedHeadings = [...this.tableHead].filter((_, i) => !this.columnHidden || this.columnToHide !== i);
 
     // Calculate hug widths based on adjusted columns
-    const hugWidths = adjustedHeadings.map((text, i) => (adjustedLayout[i] === "hug" ? (this.getMsgLength(text) + colGap) * dotUnit : 0));
+    const hugWidths = adjustedHeadings.map((text, i) =>
+      adjustedLayout[i] === "hug" ? (this.getMsgLength(text) + colGap) * this.dotUnit : 0
+    );
     const totalHugWidth = hugWidths.reduce((sum, w) => sum + w, 0);
 
     // Count fill columns
     const fillCols = adjustedLayout.filter((type) => type === "fill").length;
-    const fillWidth = fillCols > 0 ? (this.numCols * dotUnit - totalHugWidth) / fillCols : 0;
+    const fillWidth = fillCols > 0 ? (this.numCols * this.dotUnit - totalHugWidth) / fillCols : 0;
 
     // Compute x offset by summing widths of previous columns
     for (let i = 0; i < adjustedCol; i++) {

@@ -13,7 +13,6 @@ const transitionDelay = 200;
 // Sizing (px)
 const dotRadius = 4;
 const dotGap = 2;
-const dotUnit = dotRadius * 2 + dotGap;
 
 // Dimensions (dot count)
 const charGap = 1;
@@ -62,29 +61,33 @@ class TrainBoard extends DotMatrix {
     // Sizing
     this.parentElt = parentElt;
     this.numCols = numCols;
-    this.breakpoint = 600;
+    this.dotRadius = dotRadius;
+    this.dotGap = dotGap;
+    this.breakpoint = 800;
 
     this.setCanvasSize();
   }
 
   setCanvasSize = () => {
-    // TODO - Handle breakpoints
+    // Handle responsiveness
+    const baseWidth = this.numCols * this.dotUnit - this.dotGap;
     if (window.innerWidth < this.breakpoint) {
+      this.scale = (window.innerWidth - /* body padding */ 64) / baseWidth;
     } else {
+      this.scale = 1;
+      this.numCols = Math.floor(this.parentElt.clientWidth / this.dotUnit);
     }
 
-    this.numCols = Math.floor(this.parentElt.clientWidth / dotUnit);
-
-    this.setBoardSize(numRows, this.numCols);
-    this.setTextField({
+    this.numRows = numRows;
+    this.textField = {
       top: paddingY + msgMargin,
-      right: (this.numCols - paddingX - bumperWidth - msgMargin) * dotUnit - dotGap,
-      bottom: (numRows - paddingY - msgMargin) * dotUnit - dotGap,
-      left: (paddingX + bumperWidth + msgMargin) * dotUnit,
-    });
+      right: (this.numCols - paddingX - bumperWidth - msgMargin) * this.dotUnit - this.dotGap,
+      bottom: (numRows - paddingY - msgMargin) * this.dotUnit - this.dotGap,
+      left: (paddingX + bumperWidth + msgMargin) * this.dotUnit,
+    };
 
-    const width = this.numCols * dotUnit - dotGap;
-    const height = numRows * dotUnit - dotGap;
+    const width = this.numCols * this.dotUnit - this.dotGap;
+    const height = numRows * this.dotUnit - this.dotGap;
 
     this.canvasSize = { width, height };
   };
@@ -111,7 +114,7 @@ class TrainBoard extends DotMatrix {
           takeUntil(this.destroy$),
           tap(({ msgArray }) => {
             // Update array with new messages
-            console.log("updating message array");
+            console.log("updating message array", msgArray);
             this.msgArray = msgArray;
           }),
           distinctUntilChanged((prev, curr) => prev.trainId === curr.trainId),
@@ -300,8 +303,8 @@ class TrainBoard extends DotMatrix {
    * @param {object} p - p5.js instance
    */
   drawBoard = (p) => {
-    let dotX = dotRadius;
-    let dotY = dotRadius;
+    let dotX = this.dotRadius;
+    let dotY = this.dotRadius;
     let bumperVisible = bumperWidth;
 
     // Handle transition bumper animation
@@ -316,18 +319,18 @@ class TrainBoard extends DotMatrix {
     }
 
     for (let i = 0; i < numRows; i++) {
-      dotX = dotRadius;
+      dotX = this.dotRadius;
 
       for (let j = 0; j < this.numCols; j++) {
         const color = j < bumperVisible || j >= this.numCols - bumperVisible ? this.bumperColor : dotColor.off;
         p.fill(color);
         p.ellipseMode(p.RADIUS);
-        p.ellipse(dotX, dotY, dotRadius, dotRadius);
+        p.ellipse(dotX, dotY, this.dotRadius, this.dotRadius);
 
-        dotX += dotUnit;
+        dotX += this.dotUnit;
       }
 
-      dotY += dotUnit;
+      dotY += this.dotUnit;
     }
   };
 
@@ -340,12 +343,12 @@ class TrainBoard extends DotMatrix {
     let { startX, startY } = this.calcStartPos();
 
     if (this.isScrolling) {
-      startX -= this.scrollOffset * dotUnit;
+      startX -= this.scrollOffset * this.dotUnit;
     }
 
     if (this.isSliding) {
       // TODO: handle different directions
-      startY = startY + (this.slideOffset - charHeight - msgMargin - paddingY) * dotUnit;
+      startY = startY + (this.slideOffset - charHeight - msgMargin - paddingY) * this.dotUnit;
     }
 
     let msgWidth = 0;
@@ -353,7 +356,7 @@ class TrainBoard extends DotMatrix {
       const charStartX = startX + msgWidth;
       this.renderChar(p, char, charStartX, startY, dotColor.on);
 
-      msgWidth += dotUnit * (charWidth + charGap);
+      msgWidth += this.dotUnit * (charWidth + charGap);
     }
   };
 
@@ -363,14 +366,14 @@ class TrainBoard extends DotMatrix {
    * @returns {Object} Object containing startX and startY coordinates in pixels
    */
   calcStartPos = () => {
-    let startX = dotRadius + bumperWidth * dotUnit;
-    let startY = dotUnit * (paddingY + msgMargin) + dotRadius;
+    let startX = this.dotRadius + bumperWidth * this.dotUnit;
+    let startY = this.dotUnit * (paddingY + msgMargin) + this.dotRadius;
     let msgLength = this.getMsgLength(this.currentMsg);
 
     if (!this.isMsgOverflow(this.currentMsg)) {
-      startX += Math.floor((this.numCols - bumperWidth * 2 - msgLength) / 2) * dotUnit; // Center align
+      startX += Math.floor((this.numCols - bumperWidth * 2 - msgLength) / 2) * this.dotUnit; // Center align
     } else {
-      startX += msgMargin * dotUnit; // Left align with padding
+      startX += msgMargin * this.dotUnit; // Left align with padding
     }
 
     return { startX, startY };

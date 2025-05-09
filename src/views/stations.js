@@ -3,12 +3,13 @@ import p5 from "p5";
 
 import { REFRESH_RATE } from "../helpers/system.js";
 import { metroSystem } from "../helpers/system.js";
-import StationBoard from "../components/stationBoard.js";
 import { getOrInitializeMapValue } from "../helpers/helpers.js";
+
+import StationBoard from "../components/stationBoard.js";
 
 const headingText = "Stations";
 const errorMsg = [":(", "", "Error", ""];
-const emptyMsg = [":(", "", "No trains", ""];
+const emptyMsg = [":)", "", "No trains!", ""];
 
 const manualRefresh$ = new Subject();
 const pauseRefresh$ = new Subject();
@@ -101,12 +102,14 @@ const drawStationBoard = async () => {
 
     // Update table for selected station group
     merge(timer$, manualRefresh$).subscribe(async () => {
-      if (arrivals === null) {
+      arrivals = await getUpdatedArrivals();
+
+      if (arrivals === null || selectedCodes === null || selectedPlatform === null || selectedGroup === null) {
         msgTable = [errorMsg];
       } else if (arrivals.length === 0) {
         msgTable = [emptyMsg];
       } else {
-        const station = stations.entries().find(([_, value]) => selectedId === value.join(""));
+        const station = stations.entries().find(([_, value]) => selectedId === getStationId(value));
         const labelTarget = document.querySelector(".station-label");
         labelTarget.textContent = `${station[0]}`;
 
@@ -117,7 +120,6 @@ const drawStationBoard = async () => {
           platformButton.setAttribute("hidden", true);
         }
 
-        arrivals = await getUpdatedArrivals();
         msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
       }
 
@@ -135,7 +137,8 @@ const drawStationList = async () => {
     const listTarget = document.querySelector(".list-target");
 
     for (const station of stations) {
-      const stationId = station[1].join("");
+      const stationId = getStationId(station[1]);
+
       const button = document.createElement("button");
       button.id = `ID${stationId}`;
       button.classList.add("btn-dark", "btn-station");
@@ -154,8 +157,7 @@ const drawStationList = async () => {
     }
 
     // Select the button with the default selected id
-    // TODO: this seems hacky but oh well - maybe make a function that creates the id
-    const defaultStation = stations.entries().find(([_, value]) => selectedId === value.join(""));
+    const defaultStation = stations.entries().find(([_, value]) => selectedId === getStationId(value));
     selectButton(selectedId, defaultStation[1]);
   } catch (error) {
     console.error("Failed to draw station list:", error);
@@ -209,6 +211,10 @@ const getStations = async () => {
  * @returns an Array of message strings
  */
 const getCurrentMsgTable = (platformId, groupId) => {
+  if (platformId === null || groupId === null || arrivals === null) {
+    return [errorMsg];
+  }
+
   const station = arrivals.get(platformId.toString());
   const group = station?.get(groupId.toString());
 
@@ -234,6 +240,10 @@ const selectButton = (stationId, stationCodes) => {
 
   selectedId = stationId;
   selectedCodes = stationCodes;
+};
+
+const getStationId = (stnCodes) => {
+  return Array.isArray(stnCodes) ? stnCodes.join("") : null;
 };
 
 (async () => {

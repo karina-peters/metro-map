@@ -85,6 +85,7 @@ const drawTrainSign = async () => {
         labelTarget.textContent = `Train ${selectedId}`;
 
         selectedTrain = trainPositions?.find((t) => t.TrainId === selectedId) || trainPositions[0];
+        msgArray = await getCurrentMsgList(selectedTrain);
       }
 
       trainBoard.data$.next({ msgArray, lineId: selectedTrain?.LineCode, trainId: selectedTrain?.TrainId });

@@ -4572,7 +4572,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 
 var headingText = "Stations";
-var errorMsg = [":(", "", "Data fetch error", ""];
+var errorMsg = [":(", "", "Error", ""];
 var emptyMsg = [":(", "", "No trains", ""];
 var manualRefresh$ = new rxjs__WEBPACK_IMPORTED_MODULE_4__.Subject();
 var pauseRefresh$ = new rxjs__WEBPACK_IMPORTED_MODULE_4__.Subject();
@@ -4664,9 +4664,9 @@ var drawStationBoard = /*#__PURE__*/function () {
           arrivals = _context3.sent;
           // Set board messages
           msgTable = [];
-          if (trainPositions === null) {
+          if (arrivals === null) {
             msgTable = [errorMsg];
-          } else if (trainPositions.length === 0) {
+          } else if (arrivals.length === 0) {
             msgTable = [emptyMsg];
           } else {
             msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
@@ -4682,7 +4682,7 @@ var drawStationBoard = /*#__PURE__*/function () {
             return _regeneratorRuntime().wrap(function _callee2$(_context2) {
               while (1) switch (_context2.prev = _context2.next) {
                 case 0:
-                  if (!(trainPositions === null)) {
+                  if (!(arrivals === null)) {
                     _context2.next = 4;
                     break;
                   }
@@ -4690,7 +4690,7 @@ var drawStationBoard = /*#__PURE__*/function () {
                   _context2.next = 17;
                   break;
                 case 4:
-                  if (!(trainPositions.length === 0)) {
+                  if (!(arrivals.length === 0)) {
                     _context2.next = 8;
                     break;
                   }
@@ -4860,18 +4860,16 @@ var getUpdatedArrivals = /*#__PURE__*/function () {
           } finally {
             _iterator2.f();
           }
-          _context6.next = 11;
-          break;
-        case 9:
-          _context6.prev = 9;
-          _context6.t0 = _context6["catch"](1);
-        case 11:
           return _context6.abrupt("return", arrivalMap);
-        case 12:
+        case 10:
+          _context6.prev = 10;
+          _context6.t0 = _context6["catch"](1);
+          return _context6.abrupt("return", null);
+        case 13:
         case "end":
           return _context6.stop();
       }
-    }, _callee5, null, [[1, 9]]);
+    }, _callee5, null, [[1, 10]]);
   }));
   return function getUpdatedArrivals() {
     return _ref9.apply(this, arguments);
@@ -4923,12 +4921,11 @@ var getStations = /*#__PURE__*/function () {
  * @returns an Array of message strings
  */
 var getCurrentMsgTable = function getCurrentMsgTable(platformId, groupId) {
-  console.log(platformId, groupId);
   var station = arrivals.get(platformId.toString());
   var group = station === null || station === void 0 ? void 0 : station.get(groupId.toString());
   return group ? group.map(function (a) {
     return [a.Line, a.Car, a.Destination, a.Min];
-  }) : [[defaultMsg]];
+  }) : [[errorMsg]];
 };
 
 /**
@@ -4989,8 +4986,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(98);
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(63);
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(107);
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(92);
-/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(20);
+/* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(20);
 /* harmony import */ var _helpers_colors_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(86);
 /* harmony import */ var _helpers_dotFont_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(87);
 /* harmony import */ var _helpers_dotMatrix_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(88);
@@ -5176,7 +5172,7 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
       var table = [_this.tableHead].concat(_toConsumableArray(_this.msgTable));
       return (0,rxjs__WEBPACK_IMPORTED_MODULE_9__.from)(table).pipe((0,rxjs__WEBPACK_IMPORTED_MODULE_10__.concatMap)(function (row, rowIndex) {
         return _this.typeRow$(p, row, rowIndex);
-      }), (0,rxjs__WEBPACK_IMPORTED_MODULE_11__.last)(), (0,rxjs__WEBPACK_IMPORTED_MODULE_8__.finalize)(function () {
+      }), (0,rxjs__WEBPACK_IMPORTED_MODULE_8__.finalize)(function () {
         return _this.typewriterState.isActive = false;
       }));
     });
@@ -5243,8 +5239,8 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
             return;
           }
 
-          // Skip rendering the hidden column or undefined strings
-          if (!str || _this.columnHidden && colIndex === _this.columnToHide) {
+          // Skip rendering the hidden column or null strings
+          if (str === null || _this.columnHidden && colIndex === _this.columnToHide) {
             continue;
           }
           var _this$calcStartPos = _this.calcStartPos(rowIndex, adjustedColIndex),
@@ -5344,7 +5340,7 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
         _this.timer$ = null;
       }
     });
-    _this.data$ = new rxjs__WEBPACK_IMPORTED_MODULE_12__.Subject({
+    _this.data$ = new rxjs__WEBPACK_IMPORTED_MODULE_11__.Subject({
       msgTable: _msgTable,
       stationId: _stationId
     });
@@ -6470,23 +6466,38 @@ var drawTrainSign = /*#__PURE__*/function () {
             return _regeneratorRuntime().wrap(function _callee3$(_context3) {
               while (1) switch (_context3.prev = _context3.next) {
                 case 0:
-                  if (trainPositions === null) {
-                    msgArray = [errorMsg];
-                  } else if (trainPositions.length === 0) {
-                    msgArray = [emptyMsg];
-                  } else {
-                    labelTarget = document.querySelector(".train-label");
-                    labelTarget.textContent = "Train ".concat(selectedId);
-                    selectedTrain = ((_trainPositions2 = trainPositions) === null || _trainPositions2 === void 0 ? void 0 : _trainPositions2.find(function (t) {
-                      return t.TrainId === selectedId;
-                    })) || trainPositions[0];
+                  if (!(trainPositions === null)) {
+                    _context3.next = 4;
+                    break;
                   }
+                  msgArray = [errorMsg];
+                  _context3.next = 14;
+                  break;
+                case 4:
+                  if (!(trainPositions.length === 0)) {
+                    _context3.next = 8;
+                    break;
+                  }
+                  msgArray = [emptyMsg];
+                  _context3.next = 14;
+                  break;
+                case 8:
+                  labelTarget = document.querySelector(".train-label");
+                  labelTarget.textContent = "Train ".concat(selectedId);
+                  selectedTrain = ((_trainPositions2 = trainPositions) === null || _trainPositions2 === void 0 ? void 0 : _trainPositions2.find(function (t) {
+                    return t.TrainId === selectedId;
+                  })) || trainPositions[0];
+                  _context3.next = 13;
+                  return getCurrentMsgList(selectedTrain);
+                case 13:
+                  msgArray = _context3.sent;
+                case 14:
                   trainBoard.data$.next({
                     msgArray: msgArray,
                     lineId: (_selectedTrain3 = selectedTrain) === null || _selectedTrain3 === void 0 ? void 0 : _selectedTrain3.LineCode,
                     trainId: (_selectedTrain4 = selectedTrain) === null || _selectedTrain4 === void 0 ? void 0 : _selectedTrain4.TrainId
                   });
-                case 2:
+                case 15:
                 case "end":
                   return _context3.stop();
               }
@@ -6813,7 +6824,7 @@ var TrainBoard = /*#__PURE__*/function (_DotMatrix) {
                 _this.data$.pipe((0,rxjs__WEBPACK_IMPORTED_MODULE_3__.takeUntil)(_this.destroy$), (0,rxjs__WEBPACK_IMPORTED_MODULE_4__.tap)(function (_ref2) {
                   var msgArray = _ref2.msgArray;
                   // Update array with new messages
-                  console.log("updating message array");
+                  console.log("updating message array", msgArray);
                   _this.msgArray = msgArray;
                 }), (0,rxjs__WEBPACK_IMPORTED_MODULE_5__.distinctUntilChanged)(function (prev, curr) {
                   return prev.trainId === curr.trainId;
