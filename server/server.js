@@ -3,9 +3,6 @@ import fetch from "node-fetch";
 import path from "path";
 import bodyParser from "body-parser";
 import cors from "cors";
-import http from "http";
-import https from "https";
-import fs from "fs";
 
 import { configDotenv } from "dotenv";
 import { fileURLToPath } from 'url';
@@ -23,7 +20,6 @@ const __dirname = path.dirname(__filename);
 configDotenv({ path: path.resolve(__dirname, ".env") });
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 // Parse request.body and make it available
 app.use(bodyParser.json());
@@ -193,29 +189,26 @@ app.get("/api/circuits", async (req, res) => {
   }
 });
 
-const isProduction = process.env.NODE_ENV === 'production';
+const startServer = async () => {
+  const isProduction = process.env.NODE_ENV === 'production';
 
-if (isProduction) {
-  const httpsOptions = {
-    key: fs.readFileSync('/etc/letsencrypt/live/metro-vis.com/privkey.pem'),
-    cert: fs.readFileSync('/etc/letsencrypt/live/metro-vis.com/fullchain.pem')
-  };
-  
-  // HTTP server for redirects
-  const httpServer = http.createServer((req, res) => {
-    res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
-    res.end();
-  });
-  httpServer.listen(80);
-  
-  // HTTPS server
-  const httpsServer = https.createServer(httpsOptions, app);
-  httpsServer.listen(443, () => {
-    console.log('HTTPS Server running on port 443');
-  });
-} else {
-  const listener = app.listen(port, async () => {
+  try {
     await preloadData();
-    console.log("Your app is listening on port " + listener.address().port);
-  });
+    
+    if (isProduction) {
+      app.listen(3000, '0.0.0.0', () => {
+        console.log('Server running on port 3000');
+      });
+    } else {
+      // Development server
+      app.listen(3001, () => {
+        console.log('Development server running on http://localhost:3001');
+      });
+    }
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 }
+
+startServer();

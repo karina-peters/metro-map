@@ -17,7 +17,7 @@ module.exports = {
     proxy: [
       {
         context: ["/api"],
-        target: "http://localhost:3000/", // Backend server address
+        target: "http://localhost:3001/", // Backend server address
         secure: false,
         changeOrigin: true,
         logLevel: "debug",
@@ -54,7 +54,7 @@ module.exports = {
       inject: true,
     }),
     new webpack.DefinePlugin({
-      "process.env.VITE_API_URL": JSON.stringify(process.env.VITE_API_URL || "http://localhost:3000"),
+      "process.env.VITE_API_URL": JSON.stringify(process.env.VITE_API_URL || "http://localhost:3001"),
     }),
   ],
 };

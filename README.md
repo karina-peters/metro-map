@@ -27,6 +27,15 @@ npm install
 
 ### Running the Application
 
+To run the server locally, you will need a WMATA API Key. You can get one here: https://developer.wmata.com/.\
+Add the following variables to a .env file in the server directory:
+
+```bash
+API_KEY=<YOUR_WMATA_API_KEY>
+WMATA_HOST=http://api.wmata.com
+NODE_ENV=development
+```
+
 To start the development servers for both the client and server:
 
 ```bash
@@ -36,8 +45,8 @@ npm run start
 This will:
 
 - Build the frontend application using Webpack
-- Launch the Express backend server on [http://localhost:3000](http://localhost:3000)
-- Launch the Webpack development server for the frontend on [http://localhost:8080](http://localhost:8080)
+- Launch the Express backend server on http://localhost:3001
+- Launch the Webpack development server for the frontend on http://localhost:8080
 
 Open your browser to `http://localhost:8080` to view the app. The client is set up to proxy API requests to the backend server.
 

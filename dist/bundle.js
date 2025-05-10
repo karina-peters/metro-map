@@ -2376,7 +2376,7 @@ var REGIONS = {
   ALL: "All",
   DC: "DC"
 };
-var BASE_URL = "http://localhost:3000" || 0;
+var BASE_URL = "http://localhost:3001" || 0;
 var SystemService = /*#__PURE__*/function () {
   function SystemService() {
     _classCallCheck(this, SystemService);

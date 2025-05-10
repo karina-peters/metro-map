@@ -1,3 +1,4 @@
 reference/
 node_modules
 *.pem
+server/.env
