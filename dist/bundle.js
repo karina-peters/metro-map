@@ -518,7 +518,6 @@ ___CSS_LOADER_EXPORT___.push([module.id, `.content-target {
 .list-target {
   display: flex;
   flex-flow: row wrap;
-  padding: 1rem;
   gap: 0.5rem;
   margin: 2rem 0;
   align-items: center;
@@ -535,7 +534,7 @@ ___CSS_LOADER_EXPORT___.push([module.id, `.content-target {
   text-transform: uppercase;
   align-self: flex-end;
 }
-`, "",{"version":3,"sources":["webpack://./src/styles/trains.css"],"names":[],"mappings":"AAAA;EACE,cAAc;AAChB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,aAAa;EACb,WAAW;EACX,cAAc;EACd,mBAAmB;AACrB;;AAEA;EACE,eAAe;EACf,WAAW;AACb;;AAEA;EACE,cAAc;EACd,iBAAiB;EACjB,yBAAyB;EACzB,oBAAoB;AACtB","sourcesContent":[".content-target {\n  margin: 2rem 0;\n}\n\n.list-target {\n  display: flex;\n  flex-flow: row wrap;\n  padding: 1rem;\n  gap: 0.5rem;\n  margin: 2rem 0;\n  align-items: center;\n}\n\n.btn-train {\n  cursor: pointer;\n  width: 4rem;\n}\n\n.train-label {\n  margin: 1rem 0;\n  font-size: 1.5rem;\n  text-transform: uppercase;\n  align-self: flex-end;\n}\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./src/styles/trains.css"],"names":[],"mappings":"AAAA;EACE,cAAc;AAChB;;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,WAAW;EACX,cAAc;EACd,mBAAmB;AACrB;;AAEA;EACE,eAAe;EACf,WAAW;AACb;;AAEA;EACE,cAAc;EACd,iBAAiB;EACjB,yBAAyB;EACzB,oBAAoB;AACtB","sourcesContent":[".content-target {\n  margin: 2rem 0;\n}\n\n.list-target {\n  display: flex;\n  flex-flow: row wrap;\n  gap: 0.5rem;\n  margin: 2rem 0;\n  align-items: center;\n}\n\n.btn-train {\n  cursor: pointer;\n  width: 4rem;\n}\n\n.train-label {\n  margin: 1rem 0;\n  font-size: 1.5rem;\n  text-transform: uppercase;\n  align-self: flex-end;\n}\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -4552,8 +4551,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var rxjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(43);
 /* harmony import */ var p5__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(84);
 /* harmony import */ var _helpers_system_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(39);
-/* harmony import */ var _components_stationBoard_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(85);
-/* harmony import */ var _helpers_helpers_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(40);
+/* harmony import */ var _helpers_helpers_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(40);
+/* harmony import */ var _components_stationBoard_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(85);
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
@@ -4573,7 +4572,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 var headingText = "Stations";
 var errorMsg = [":(", "", "Error", ""];
-var emptyMsg = [":(", "", "No trains", ""];
+var emptyMsg = [":)", "", "No trains!", ""];
 var manualRefresh$ = new rxjs__WEBPACK_IMPORTED_MODULE_4__.Subject();
 var pauseRefresh$ = new rxjs__WEBPACK_IMPORTED_MODULE_4__.Subject();
 var timer$ = (0,rxjs__WEBPACK_IMPORTED_MODULE_5__.timer)(0, _helpers_system_js__WEBPACK_IMPORTED_MODULE_1__.REFRESH_RATE).pipe((0,rxjs__WEBPACK_IMPORTED_MODULE_6__.takeUntil)(pauseRefresh$));
@@ -4673,7 +4672,7 @@ var drawStationBoard = /*#__PURE__*/function () {
           }
 
           // Draw board with p5.js
-          stationBoard = new _components_stationBoard_js__WEBPACK_IMPORTED_MODULE_2__["default"](boardTarget, header, msgTable, selectedId, 1);
+          stationBoard = new _components_stationBoard_js__WEBPACK_IMPORTED_MODULE_3__["default"](boardTarget, header, msgTable, selectedId, 1);
           new p5__WEBPACK_IMPORTED_MODULE_0__(stationBoard.sketch, boardTarget);
 
           // Update table for selected station group
@@ -4682,47 +4681,36 @@ var drawStationBoard = /*#__PURE__*/function () {
             return _regeneratorRuntime().wrap(function _callee2$(_context2) {
               while (1) switch (_context2.prev = _context2.next) {
                 case 0:
-                  if (!(arrivals === null)) {
-                    _context2.next = 4;
-                    break;
-                  }
-                  msgTable = [errorMsg];
-                  _context2.next = 17;
-                  break;
-                case 4:
-                  if (!(arrivals.length === 0)) {
-                    _context2.next = 8;
-                    break;
-                  }
-                  msgTable = [emptyMsg];
-                  _context2.next = 17;
-                  break;
-                case 8:
-                  station = stations.entries().find(function (_ref4) {
-                    var _ref5 = _slicedToArray(_ref4, 2),
-                      _ = _ref5[0],
-                      value = _ref5[1];
-                    return selectedId === value.join("");
-                  });
-                  labelTarget = document.querySelector(".station-label");
-                  labelTarget.textContent = "".concat(station[0]);
-                  platformButton = document.querySelector(".btn-platforms");
-                  if (station[1].length > 1) {
-                    platformButton.removeAttribute("hidden");
-                  } else {
-                    platformButton.setAttribute("hidden", true);
-                  }
-                  _context2.next = 15;
+                  _context2.next = 2;
                   return getUpdatedArrivals();
-                case 15:
+                case 2:
                   arrivals = _context2.sent;
-                  msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
-                case 17:
+                  if (arrivals === null || selectedCodes === null || selectedPlatform === null || selectedGroup === null) {
+                    msgTable = [errorMsg];
+                  } else if (arrivals.length === 0) {
+                    msgTable = [emptyMsg];
+                  } else {
+                    station = stations.entries().find(function (_ref4) {
+                      var _ref5 = _slicedToArray(_ref4, 2),
+                        _ = _ref5[0],
+                        value = _ref5[1];
+                      return selectedId === getStationId(value);
+                    });
+                    labelTarget = document.querySelector(".station-label");
+                    labelTarget.textContent = "".concat(station[0]);
+                    platformButton = document.querySelector(".btn-platforms");
+                    if (station[1].length > 1) {
+                      platformButton.removeAttribute("hidden");
+                    } else {
+                      platformButton.setAttribute("hidden", true);
+                    }
+                    msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
+                  }
                   stationBoard.data$.next({
                     msgTable: msgTable,
                     stationId: selectedId
                   });
-                case 18:
+                case 5:
                 case "end":
                   return _context2.stop();
               }
@@ -4762,7 +4750,7 @@ var drawStationList = /*#__PURE__*/function () {
               while (1) switch (_context4.prev = _context4.next) {
                 case 0:
                   station = _step.value;
-                  stationId = station[1].join("");
+                  stationId = getStationId(station[1]);
                   button = document.createElement("button");
                   button.id = "ID".concat(stationId);
                   button.classList.add("btn-dark", "btn-station");
@@ -4804,12 +4792,11 @@ var drawStationList = /*#__PURE__*/function () {
           return _context5.finish(15);
         case 18:
           // Select the button with the default selected id
-          // TODO: this seems hacky but oh well - maybe make a function that creates the id
           defaultStation = stations.entries().find(function (_ref7) {
             var _ref8 = _slicedToArray(_ref7, 2),
               _ = _ref8[0],
               value = _ref8[1];
-            return selectedId === value.join("");
+            return selectedId === getStationId(value);
           });
           selectButton(selectedId, defaultStation[1]);
           _context5.next = 27;
@@ -4851,8 +4838,8 @@ var getUpdatedArrivals = /*#__PURE__*/function () {
           try {
             for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
               arrival = _step2.value;
-              stnCodeToGroup = (0,_helpers_helpers_js__WEBPACK_IMPORTED_MODULE_3__.getOrInitializeMapValue)(arrivalMap, arrival.LocationCode, new Map());
-              _arrivals = (0,_helpers_helpers_js__WEBPACK_IMPORTED_MODULE_3__.getOrInitializeMapValue)(stnCodeToGroup, arrival.Group, []);
+              stnCodeToGroup = (0,_helpers_helpers_js__WEBPACK_IMPORTED_MODULE_2__.getOrInitializeMapValue)(arrivalMap, arrival.LocationCode, new Map());
+              _arrivals = (0,_helpers_helpers_js__WEBPACK_IMPORTED_MODULE_2__.getOrInitializeMapValue)(stnCodeToGroup, arrival.Group, []);
               _arrivals.push(arrival);
             }
           } catch (err) {
@@ -4891,7 +4878,7 @@ var getStations = /*#__PURE__*/function () {
           try {
             for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
               station = _step3.value;
-              stationCodes = (0,_helpers_helpers_js__WEBPACK_IMPORTED_MODULE_3__.getOrInitializeMapValue)(stationMap, station.name, []);
+              stationCodes = (0,_helpers_helpers_js__WEBPACK_IMPORTED_MODULE_2__.getOrInitializeMapValue)(stationMap, station.name, []);
               stationCodes.push(station.code);
             }
           } catch (err) {
@@ -4921,6 +4908,9 @@ var getStations = /*#__PURE__*/function () {
  * @returns an Array of message strings
  */
 var getCurrentMsgTable = function getCurrentMsgTable(platformId, groupId) {
+  if (platformId === null || groupId === null || arrivals === null) {
+    return [errorMsg];
+  }
   var station = arrivals.get(platformId.toString());
   var group = station === null || station === void 0 ? void 0 : station.get(groupId.toString());
   return group ? group.map(function (a) {
@@ -4946,6 +4936,9 @@ var selectButton = function selectButton(stationId, stationCodes) {
   }
   selectedId = stationId;
   selectedCodes = stationCodes;
+};
+var getStationId = function getStationId(stnCodes) {
+  return Array.isArray(stnCodes) ? stnCodes.join("") : null;
 };
 _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee7() {
   return _regeneratorRuntime().wrap(function _callee7$(_context8) {
@@ -5030,7 +5023,6 @@ var transitionDelay = 200;
 // Sizing (px)
 var dotRadius = 4;
 var dotGap = 2;
-var dotUnit = dotRadius * 2 + dotGap;
 
 // Board Dimensions (dot count)
 var charGap = 1;
@@ -5060,22 +5052,23 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
 
     // Data
     _defineProperty(_this, "setCanvasSize", function () {
-      // TODO - Handle breakpoints
-      if (window.innerWidth < _this.breakpoint) {
-        _this.columnHidden = true;
+      // Handle responsiveness
+      var baseWidth = _this.numCols * _this.dotUnit - _this.dotGap;
+      _this.columnHidden = window.innerWidth < _this.breakpointHide;
+      if (window.innerWidth < _this.breakpointScale) {
+        _this.scale = (window.innerWidth - /* body padding */64) / baseWidth;
       } else {
-        _this.columnHidden = false;
+        _this.scale = 1;
+        _this.numCols = Math.max(_this.calcMinBoardWidth(), Math.floor(_this.parentElt.clientWidth / _this.dotUnit));
       }
-      _this.numCols = Math.max(_this.calcMinBoardWidth(), Math.floor(_this.parentElt.clientWidth / dotUnit));
-      _this.setBoardSize(_this.numRows, _this.numCols);
-      _this.setTextField({
+      _this.textField = {
         top: paddingY + msgMargin,
-        right: (_this.numCols - paddingX - msgMargin) * dotUnit - dotGap,
-        bottom: (_this.numRows - paddingY - msgMargin) * dotUnit - dotGap,
-        left: (paddingX + msgMargin) * dotUnit
-      });
-      var width = _this.numCols * dotUnit - dotGap;
-      var height = _this.numRows * dotUnit - dotGap;
+        right: (_this.numCols - paddingX - msgMargin) * _this.dotUnit - _this.dotGap,
+        bottom: (_this.numRows - paddingY - msgMargin) * _this.dotUnit - _this.dotGap,
+        left: (paddingX + msgMargin) * _this.dotUnit
+      };
+      var width = _this.scale * _this.numCols * _this.dotUnit - _this.dotGap;
+      var height = _this.scale * _this.numRows * _this.dotUnit - _this.dotGap;
       _this.canvasSize = {
         width: width,
         height: height
@@ -5255,7 +5248,7 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
             for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
               var _char2 = _step2.value;
               _this.renderChar(p, _char2, charStartX, startY, color);
-              charStartX += (charWidth + charGap) * dotUnit;
+              charStartX += (charWidth + charGap) * _this.dotUnit;
             }
           } catch (err) {
             _iterator2.e(err);
@@ -5276,8 +5269,8 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
      * @returns {Object} Object containing startX and startY coordinates in pixels
      */
     _defineProperty(_this, "calcStartPos", function (row, adjustedCol) {
-      var startX = (paddingX + msgMargin) * dotUnit;
-      var startY = (paddingY + msgMargin + row * (charHeight + rowGap)) * dotUnit;
+      var startX = (paddingX + msgMargin) * _this.dotUnit;
+      var startY = (paddingY + msgMargin + row * (charHeight + rowGap)) * _this.dotUnit;
 
       // Create adjusted layout and headings without the hidden column
       var adjustedLayout = [].concat(COLUMN_LAYOUT).filter(function (_, i) {
@@ -5289,7 +5282,7 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
 
       // Calculate hug widths based on adjusted columns
       var hugWidths = adjustedHeadings.map(function (text, i) {
-        return adjustedLayout[i] === "hug" ? (_this.getMsgLength(text) + colGap) * dotUnit : 0;
+        return adjustedLayout[i] === "hug" ? (_this.getMsgLength(text) + colGap) * _this.dotUnit : 0;
       });
       var totalHugWidth = hugWidths.reduce(function (sum, w) {
         return sum + w;
@@ -5299,7 +5292,7 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
       var fillCols = adjustedLayout.filter(function (type) {
         return type === "fill";
       }).length;
-      var fillWidth = fillCols > 0 ? (_this.numCols * dotUnit - totalHugWidth) / fillCols : 0;
+      var fillWidth = fillCols > 0 ? (_this.numCols * _this.dotUnit - totalHugWidth) / fillCols : 0;
 
       // Compute x offset by summing widths of previous columns
       for (var i = 0; i < adjustedCol; i++) {
@@ -5365,9 +5358,11 @@ var StationBoard = /*#__PURE__*/function (_DotMatrix) {
 
     // Sizing
     _this.parentElt = parentElt;
-    _this.numCols = Math.max(_this.calcMinBoardWidth(), Math.floor(_this.parentElt.clientWidth / dotUnit));
+    _this.numCols = Math.max(_this.calcMinBoardWidth(), Math.floor(_this.parentElt.clientWidth / _this.dotUnit));
     _this.numRows = _this.numTableRows * (charHeight + rowGap) - rowGap + 2 * (msgMargin + paddingY);
-    _this.breakpoint = 1375;
+    _this.breakpointHide = 1375;
+    _this.breakpointScale = _this.calcMinBoardWidth() * _this.dotUnit - _this.dotGap - /* body padding */64;
+    _this.scale = 1;
     _this.setCanvasSize();
     return _this;
   }
@@ -5514,7 +5509,7 @@ var DotMatrix = /*#__PURE__*/_createClass(
  * @param {number} dotRadius - Dot radius in pixels
  * @param {number} dotGap - Space between dots in pixels
  */
-function DotMatrix(_numRows, _numCols, dotRadius, dotGap) {
+function DotMatrix(numRows, numCols, dotRadius, dotGap) {
   var _this = this;
   _classCallCheck(this, DotMatrix);
   /**
@@ -5628,22 +5623,6 @@ function DotMatrix(_numRows, _numCols, dotRadius, dotGap) {
     var visibleWidth = (_this.textField.right - _this.textField.left + _this.dotGap) / _this.dotUnit;
     return msgWidth > visibleWidth;
   });
-  _defineProperty(this, "setTextField", function (_ref2) {
-    var top = _ref2.top,
-      right = _ref2.right,
-      bottom = _ref2.bottom,
-      left = _ref2.left;
-    _this.textField = {
-      top: top,
-      right: right,
-      bottom: bottom,
-      left: left
-    };
-  });
-  _defineProperty(this, "setBoardSize", function (numRows, numCols) {
-    _this.numRows = numRows;
-    _this.numCols = numCols;
-  });
   // Component State
   this.destroy$ = new rxjs__WEBPACK_IMPORTED_MODULE_8__.Subject();
 
@@ -5651,8 +5630,8 @@ function DotMatrix(_numRows, _numCols, dotRadius, dotGap) {
   this.dotRadius = dotRadius;
   this.dotGap = dotGap;
   this.dotUnit = dotRadius * 2 + dotGap;
-  this.numCols = _numCols;
-  this.numRows = _numRows;
+  this.numCols = numCols;
+  this.numRows = numRows;
   this.textField = {
     top: paddingY * this.dotUnit,
     right: (this.numCols - paddingX - msgMargin) * this.dotUnit - dotGap,
@@ -6756,7 +6735,6 @@ var transitionDelay = 200;
 // Sizing (px)
 var dotRadius = 4;
 var dotGap = 2;
-var dotUnit = dotRadius * 2 + dotGap;
 
 // Dimensions (dot count)
 var charGap = 1;
@@ -6786,18 +6764,23 @@ var TrainBoard = /*#__PURE__*/function (_DotMatrix) {
 
     // Data
     _defineProperty(_this, "setCanvasSize", function () {
-      // TODO - Handle breakpoints
-      if (window.innerWidth < _this.breakpoint) {} else {}
-      _this.numCols = Math.floor(_this.parentElt.clientWidth / dotUnit);
-      _this.setBoardSize(numRows, _this.numCols);
-      _this.setTextField({
+      // Handle responsiveness
+      var baseWidth = _this.numCols * _this.dotUnit - _this.dotGap;
+      if (window.innerWidth < _this.breakpoint) {
+        _this.scale = (window.innerWidth - /* body padding */64) / baseWidth;
+      } else {
+        _this.scale = 1;
+        _this.numCols = Math.floor(_this.parentElt.clientWidth / _this.dotUnit);
+      }
+      _this.numRows = numRows;
+      _this.textField = {
         top: paddingY + msgMargin,
-        right: (_this.numCols - paddingX - bumperWidth - msgMargin) * dotUnit - dotGap,
-        bottom: (numRows - paddingY - msgMargin) * dotUnit - dotGap,
-        left: (paddingX + bumperWidth + msgMargin) * dotUnit
-      });
-      var width = _this.numCols * dotUnit - dotGap;
-      var height = numRows * dotUnit - dotGap;
+        right: (_this.numCols - paddingX - bumperWidth - msgMargin) * _this.dotUnit - _this.dotGap,
+        bottom: (numRows - paddingY - msgMargin) * _this.dotUnit - _this.dotGap,
+        left: (paddingX + bumperWidth + msgMargin) * _this.dotUnit
+      };
+      var width = _this.numCols * _this.dotUnit - _this.dotGap;
+      var height = numRows * _this.dotUnit - _this.dotGap;
       _this.canvasSize = {
         width: width,
         height: height
@@ -7000,8 +6983,8 @@ var TrainBoard = /*#__PURE__*/function (_DotMatrix) {
      * @param {object} p - p5.js instance
      */
     _defineProperty(_this, "drawBoard", function (p) {
-      var dotX = dotRadius;
-      var dotY = dotRadius;
+      var dotX = _this.dotRadius;
+      var dotY = _this.dotRadius;
       var bumperVisible = bumperWidth;
 
       // Handle transition bumper animation
@@ -7015,15 +6998,15 @@ var TrainBoard = /*#__PURE__*/function (_DotMatrix) {
         }
       }
       for (var i = 0; i < numRows; i++) {
-        dotX = dotRadius;
+        dotX = _this.dotRadius;
         for (var j = 0; j < _this.numCols; j++) {
           var color = j < bumperVisible || j >= _this.numCols - bumperVisible ? _this.bumperColor : _helpers_colors_js__WEBPACK_IMPORTED_MODULE_0__.dotColor.off;
           p.fill(color);
           p.ellipseMode(p.RADIUS);
-          p.ellipse(dotX, dotY, dotRadius, dotRadius);
-          dotX += dotUnit;
+          p.ellipse(dotX, dotY, _this.dotRadius, _this.dotRadius);
+          dotX += _this.dotUnit;
         }
-        dotY += dotUnit;
+        dotY += _this.dotUnit;
       }
     });
     /**
@@ -7036,11 +7019,11 @@ var TrainBoard = /*#__PURE__*/function (_DotMatrix) {
         startX = _this$calcStartPos.startX,
         startY = _this$calcStartPos.startY;
       if (_this.isScrolling) {
-        startX -= _this.scrollOffset * dotUnit;
+        startX -= _this.scrollOffset * _this.dotUnit;
       }
       if (_this.isSliding) {
         // TODO: handle different directions
-        startY = startY + (_this.slideOffset - charHeight - msgMargin - paddingY) * dotUnit;
+        startY = startY + (_this.slideOffset - charHeight - msgMargin - paddingY) * _this.dotUnit;
       }
       var msgWidth = 0;
       var _iterator = _createForOfIteratorHelper(_this.currentMsg),
@@ -7050,7 +7033,7 @@ var TrainBoard = /*#__PURE__*/function (_DotMatrix) {
           var _char = _step.value;
           var charStartX = startX + msgWidth;
           _this.renderChar(p, _char, charStartX, startY, _helpers_colors_js__WEBPACK_IMPORTED_MODULE_0__.dotColor.on);
-          msgWidth += dotUnit * (charWidth + charGap);
+          msgWidth += _this.dotUnit * (charWidth + charGap);
         }
       } catch (err) {
         _iterator.e(err);
@@ -7064,13 +7047,13 @@ var TrainBoard = /*#__PURE__*/function (_DotMatrix) {
      * @returns {Object} Object containing startX and startY coordinates in pixels
      */
     _defineProperty(_this, "calcStartPos", function () {
-      var startX = dotRadius + bumperWidth * dotUnit;
-      var startY = dotUnit * (paddingY + msgMargin) + dotRadius;
+      var startX = _this.dotRadius + bumperWidth * _this.dotUnit;
+      var startY = _this.dotUnit * (paddingY + msgMargin) + _this.dotRadius;
       var msgLength = _this.getMsgLength(_this.currentMsg);
       if (!_this.isMsgOverflow(_this.currentMsg)) {
-        startX += Math.floor((_this.numCols - bumperWidth * 2 - msgLength) / 2) * dotUnit; // Center align
+        startX += Math.floor((_this.numCols - bumperWidth * 2 - msgLength) / 2) * _this.dotUnit; // Center align
       } else {
-        startX += msgMargin * dotUnit; // Left align with padding
+        startX += msgMargin * _this.dotUnit; // Left align with padding
       }
       return {
         startX: startX,
@@ -7124,7 +7107,9 @@ var TrainBoard = /*#__PURE__*/function (_DotMatrix) {
     // Sizing
     _this.parentElt = parentElt;
     _this.numCols = numCols;
-    _this.breakpoint = 600;
+    _this.dotRadius = dotRadius;
+    _this.dotGap = dotGap;
+    _this.breakpoint = 800;
     _this.setCanvasSize();
     return _this;
   }

@@ -3,6 +3,9 @@ import fetch from "node-fetch";
 import path from "path";
 import bodyParser from "body-parser";
 import cors from "cors";
+import http from "http";
+import https from "https";
+import fs from "fs";
 
 import { configDotenv } from "dotenv";
 import { fileURLToPath } from 'url';
@@ -29,7 +32,30 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static("public"));
 
-app.use(cors({ origin: "*" }));
+// CORS/server setup courtesy of Claude
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      'https://metro-vis.netlify.app',
+      'http://localhost:3000',
+      'http://localhost:8080',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:8080'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // Fetching static data files
 app.get("/api/regions/:region", async (req, res) => {
@@ -167,8 +193,29 @@ app.get("/api/circuits", async (req, res) => {
   }
 });
 
-// listen for requests :)
-const listener = app.listen(port, async () => {
-  await preloadData();
-  console.log("Your app is listening on port " + listener.address().port);
-});
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  const httpsOptions = {
+    key: fs.readFileSync('/etc/letsencrypt/live/metro-vis.com/privkey.pem'),
+    cert: fs.readFileSync('/etc/letsencrypt/live/metro-vis.com/fullchain.pem')
+  };
+  
+  // HTTP server for redirects
+  const httpServer = http.createServer((req, res) => {
+    res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+    res.end();
+  });
+  httpServer.listen(80);
+  
+  // HTTPS server
+  const httpsServer = https.createServer(httpsOptions, app);
+  httpsServer.listen(443, () => {
+    console.log('HTTPS Server running on port 443');
+  });
+} else {
+  const listener = app.listen(port, async () => {
+    await preloadData();
+    console.log("Your app is listening on port " + listener.address().port);
+  });
+}
