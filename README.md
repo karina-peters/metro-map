@@ -1,6 +1,6 @@
 # Metro Visualizer
 
-A set of realtime visualations for the DC Metro system based on data from various [WMATA APIs](https://developer.wmata.com/apis). It's still a work it progress, but you can check it out here: [https://metro-vis.netlify.app/](https://metro-vis.netlify.app/).
+A set of realtime visualations for the DC Metro system based on data from various [WMATA APIs](https://developer.wmata.com/apis). It's still a work in progress, but you can check it out here: [https://metro-vis.netlify.app/](https://metro-vis.netlify.app/).
 
 ## Getting Started
 
@@ -57,5 +57,3 @@ Open your browser to `http://localhost:8080` to view the app. The client is set 
 - [p5.js](https://p5js.org/) – Visual and interactive canvas library
 - [RxJS](https://rxjs.dev/) – Reactive programming for data streams
 - [WMATA APIs](https://developer.wmata.com/) – Real-time Metro data
-
-## License
