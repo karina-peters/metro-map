@@ -2,7 +2,8 @@ import { timer, takeWhile, tap, switchMap, finalize, Subject, takeUntil, of, del
 
 import { backgroundColor, dotColor, lineColor } from "../helpers/colors.js";
 import { fontData } from "../helpers/dotFont.js";
-import DotMatrix from "../helpers/dotMatrix.js";
+
+import DotMatrix from "./dotMatrix.js";
 
 // Timing (ms)
 const pauseDuration = 2500;
@@ -12,7 +13,7 @@ const transitionDelay = 200;
 
 // Sizing (px)
 const dotRadius = 4;
-const dotGap = 2;
+const dotGap = 0.5;
 
 // Dimensions (dot count)
 const charGap = 1;

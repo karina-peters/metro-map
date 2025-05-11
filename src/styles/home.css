@@ -15,3 +15,14 @@
   text-transform: uppercase;
   margin: 0 0 1rem 0;
 }
+
+.wrapper {
+  display: flex;
+  flex-flow: column wrap;
+}
+
+@media screen and (max-width: 800px) {
+  .title {
+    font-size: 3rem;
+  }
+}

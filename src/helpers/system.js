@@ -39,9 +39,9 @@ class SystemService {
 
     const entries = this.cktListCache.get(REGIONS.ALL);
     const lineId = this.getLineId(lineCode, lineNum);
-    const circuits = lineNum === 1 ? entries.get(lineId) : Array.from(entries.get(lineId)).reverse();
+    const circuits = lineNum === 1 ? entries?.get(lineId) : Array.from(entries.get(lineId)).reverse();
 
-    const currentCkt = circuits.find((c) => c.id === cktId);
+    const currentCkt = circuits?.find((c) => c.id === cktId);
     if (!currentCkt) {
       console.warn(`Circuit [${cktId}] is undefined`);
       return null;

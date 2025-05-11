@@ -9,8 +9,8 @@ const template = () => {
         <div class="button-wrapper">
           <button id="btn-stn">Stations</button>
           <button id="btn-train">Trains</button>
-          <button id="btn-map" disabled>Map</button>
-          <button id="btn-line" disabled>Lines</button>
+          <!-- <button id="btn-map" disabled>Map</button>
+          <button id="btn-line" disabled>Lines</button> -->
         </div>
       </div>
     </div>
@@ -38,22 +38,10 @@ export const render = () => {
  * Attaches all required event listeners
  */
 const attachEventListeners = () => {
-  // Map
-  const mapButton = document.querySelector("#btn-map");
-  mapButton.addEventListener("click", () => {
-    navigateTo("map");
-  });
-
   // Stations
   const stationButton = document.querySelector("#btn-stn");
   stationButton.addEventListener("click", () => {
     navigateTo("station");
-  });
-
-  // Lines
-  const lineButton = document.querySelector("#btn-line");
-  lineButton.addEventListener("click", () => {
-    navigateTo("line");
   });
 
   // Trains
@@ -61,4 +49,16 @@ const attachEventListeners = () => {
   trainButton.addEventListener("click", () => {
     navigateTo("train");
   });
+
+  // // Lines
+  // const lineButton = document.querySelector("#btn-line");
+  // lineButton.addEventListener("click", () => {
+  //   navigateTo("line");
+  // });
+
+  // // Map
+  // const mapButton = document.querySelector("#btn-map");
+  // mapButton.addEventListener("click", () => {
+  //   navigateTo("map");
+  // });
 };

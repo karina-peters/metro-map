@@ -1,7 +1,7 @@
 import { interval, tap, finalize, Subject, takeUntil, take, last } from "rxjs";
 
-import { dotColor } from "./colors.js";
-import { fontData } from "./dotFont.js";
+import { dotColor } from "../helpers/colors.js";
+import { fontData } from "../helpers/dotFont.js";
 
 // Dimensions (dot count)
 const charGap = 1;

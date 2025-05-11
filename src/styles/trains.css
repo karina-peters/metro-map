@@ -21,3 +21,13 @@
   text-transform: uppercase;
   align-self: flex-end;
 }
+
+@media screen and (max-width: 768px) {
+  .train-label {
+    font-size: 1rem;
+  }
+
+  .list-target {
+    margin: 0;
+  }
+}

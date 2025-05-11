@@ -84,24 +84,20 @@ const attachEventListeners = () => {
 const drawStationBoard = async () => {
   try {
     const boardTarget = document.querySelector(`.board-target#board-${selectedGroup}`);
-    arrivals = await getUpdatedArrivals();
-
-    // Set board messages
     let msgTable = [];
-    if (arrivals === null) {
-      msgTable = [errorMsg];
-    } else if (arrivals.length === 0) {
-      msgTable = [emptyMsg];
-    } else {
-      msgTable = getCurrentMsgTable(selectedCodes[selectedPlatform], selectedGroup);
-    }
 
     // Draw board with p5.js
     stationBoard = new StationBoard(boardTarget, header, msgTable, selectedId, 1);
     new p5(stationBoard.sketch, boardTarget);
 
+    arrivals = await getUpdatedArrivals();
+
     // Update table for selected station group
     merge(timer$, manualRefresh$).subscribe(async () => {
+      const station = stations.entries().find(([_, value]) => selectedId === getStationId(value));
+      const labelTarget = document.querySelector(".station-label");
+      labelTarget.textContent = `${station[0]}`;
+
       arrivals = await getUpdatedArrivals();
 
       if (arrivals === null || selectedCodes === null || selectedPlatform === null || selectedGroup === null) {
@@ -109,10 +105,6 @@ const drawStationBoard = async () => {
       } else if (arrivals.length === 0) {
         msgTable = [emptyMsg];
       } else {
-        const station = stations.entries().find(([_, value]) => selectedId === getStationId(value));
-        const labelTarget = document.querySelector(".station-label");
-        labelTarget.textContent = `${station[0]}`;
-
         const platformButton = document.querySelector(".btn-platforms");
         if (station[1].length > 1) {
           platformButton.removeAttribute("hidden");

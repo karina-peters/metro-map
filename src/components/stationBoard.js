@@ -1,8 +1,9 @@
-import { tap, switchMap, Subject, takeUntil, of, delay, concatMap, finalize, from } from "rxjs";
+import { tap, switchMap, Subject, takeUntil, of, delay, concatMap, finalize, from, iif, map } from "rxjs";
 
 import { backgroundColor, dotColor } from "../helpers/colors.js";
 import { fontData } from "../helpers/dotFont.js";
-import DotMatrix from "../helpers/dotMatrix.js";
+
+import DotMatrix from "./dotMatrix.js";
 
 // Timing (ms)
 const typeSpeed = 20;
@@ -10,7 +11,7 @@ const transitionDelay = 200;
 
 // Sizing (px)
 const dotRadius = 4;
-const dotGap = 2;
+const dotGap = 0.5;
 
 // Board Dimensions (dot count)
 const charGap = 1;
@@ -113,14 +114,18 @@ class StationBoard extends DotMatrix {
       self.data$
         .pipe(
           takeUntil(self.destroy$),
-          tap(({ msgTable }) => {
-            console.log("updating message table");
-            self.msgTable = msgTable;
-          }),
-          switchMap(({ stationId }) => {
-            const obs$ = this.stationId === stationId ? of(null) : this.doTransition$(p, stationId);
-            return obs$.pipe(tap(() => p.redraw()));
-          })
+          switchMap(({ stationId, msgTable }) =>
+            iif(
+              () => this.stationId === stationId,
+              of(null).pipe(
+                tap(() => {
+                  console.log("updating message table");
+                  self.msgTable = msgTable;
+                })
+              ),
+              this.doTransition$(p, msgTable, stationId)
+            ).pipe(tap(() => p.redraw()))
+          )
         )
         .subscribe();
 
@@ -154,26 +159,30 @@ class StationBoard extends DotMatrix {
    * @param {string} newStationId - station code of the newly selected station
    * @returns an Observable of the transition animation
    */
-  doTransition$ = (p, newStationId) => {
+  doTransition$ = (p, newMsgTable, newStationId) => {
     console.log("starting transition");
     this.isInTransition = true;
     this.clearSubscriptions();
 
     return of(null).pipe(
       takeUntil(this.destroy$),
-      tap(() => {
+      delay(transitionDelay),
+      map(() => {
         this.transitionPhase = "change";
         console.log(`changing from station ${this.stationId} to ${newStationId}`);
 
+        const enterHeading = !this.stationId;
         this.stationId = newStationId;
-        p.redraw();
+        this.msgTable = newMsgTable;
+
+        return enterHeading;
       }),
-      delay(transitionDelay),
-      switchMap(() => {
+      switchMap((enterHeading) => {
         this.transitionPhase = "in";
 
+        console.log("enter heading", enterHeading);
         // Skip exit animation if no new station selected
-        return newStationId === null ? of(null) : this.typeContent$(p);
+        return newStationId === null ? of(null) : this.typeContent$(p, enterHeading);
       }),
       finalize(() => {
         this.isInTransition = false;
@@ -181,15 +190,17 @@ class StationBoard extends DotMatrix {
     );
   };
 
-  typeContent$ = (p) => {
+  typeContent$ = (p, enterHeading) => {
     console.log("typing message in...");
     this.typewriterState.isActive = true;
     this.clearSubscriptions();
 
-    const table = [this.tableHead, ...this.msgTable];
+    // TODO: make this less gross
+    const table = enterHeading ? [this.tableHead, ...this.msgTable] : this.msgTable;
+    const offset = enterHeading ? 0 : 1;
 
     return from(table).pipe(
-      concatMap((row, rowIndex) => this.typeRow$(p, row, rowIndex)),
+      concatMap((row, rowIndex) => this.typeRow$(p, row, rowIndex + offset)),
       finalize(() => (this.typewriterState.isActive = false))
     );
   };
@@ -267,6 +278,7 @@ class StationBoard extends DotMatrix {
       const charLimit = isTyping ? typewriter.currentChar : maxMsgLength;
 
       for (const char of str.slice(0, charLimit)) {
+        // TODO: make the 8 car lime green like on the real boards
         this.renderChar(p, char, charStartX, startY, color);
         charStartX += (charWidth + charGap) * this.dotUnit;
       }
@@ -281,8 +293,8 @@ class StationBoard extends DotMatrix {
    * @returns {Object} Object containing startX and startY coordinates in pixels
    */
   calcStartPos = (row, adjustedCol) => {
-    let startX = (paddingX + msgMargin) * this.dotUnit;
-    let startY = (paddingY + msgMargin + row * (charHeight + rowGap)) * this.dotUnit;
+    let startX = dotRadius + (paddingX + msgMargin) * this.dotUnit;
+    let startY = dotRadius + (paddingY + msgMargin + row * (charHeight + rowGap)) * this.dotUnit;
 
     // Create adjusted layout and headings without the hidden column
     const adjustedLayout = [...COLUMN_LAYOUT].filter((_, i) => !this.columnHidden || this.columnToHide !== i);
