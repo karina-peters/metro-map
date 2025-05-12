@@ -8,12 +8,12 @@ import DotMatrix from "./dotMatrix.js";
 // Timing (ms)
 const pauseDuration = 2500;
 const scrollPause = 1500;
-const scrollSpeed = 50;
+const scrollSpeed = 40;
 const transitionDelay = 200;
 
 // Sizing (px)
 const dotRadius = 4;
-const dotGap = 0.5;
+const dotGap = 1;
 
 // Dimensions (dot count)
 const charGap = 1;
@@ -73,7 +73,7 @@ class TrainBoard extends DotMatrix {
     // Handle responsiveness
     const baseWidth = this.numCols * this.dotUnit - this.dotGap;
     if (window.innerWidth < this.breakpoint) {
-      this.scale = (window.innerWidth - /* body padding */ 64) / baseWidth;
+      this.scale = (window.innerWidth - /* body padding */ 32) / baseWidth;
     } else {
       this.scale = 1;
       this.numCols = Math.floor(this.parentElt.clientWidth / this.dotUnit);
@@ -87,8 +87,8 @@ class TrainBoard extends DotMatrix {
       left: (paddingX + bumperWidth + msgMargin) * this.dotUnit,
     };
 
-    const width = this.numCols * this.dotUnit - this.dotGap;
-    const height = numRows * this.dotUnit - this.dotGap;
+    const width = this.scale * this.numCols * this.dotUnit - this.dotGap;
+    const height = this.scale * numRows * this.dotUnit - this.dotGap;
 
     this.canvasSize = { width, height };
   };

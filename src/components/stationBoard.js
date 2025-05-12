@@ -11,7 +11,7 @@ const transitionDelay = 200;
 
 // Sizing (px)
 const dotRadius = 4;
-const dotGap = 0.5;
+const dotGap = 1;
 
 // Board Dimensions (dot count)
 const charGap = 1;
@@ -75,7 +75,7 @@ class StationBoard extends DotMatrix {
     const baseWidth = this.numCols * this.dotUnit - this.dotGap;
     this.columnHidden = window.innerWidth < this.breakpointHide;
     if (window.innerWidth < this.breakpointScale) {
-      this.scale = (window.innerWidth - /* body padding */ 64) / baseWidth;
+      this.scale = (window.innerWidth - /* body padding */ 32) / baseWidth;
     } else {
       this.scale = 1;
       this.numCols = Math.max(this.calcMinBoardWidth(), Math.floor(this.parentElt.clientWidth / this.dotUnit));
@@ -278,8 +278,8 @@ class StationBoard extends DotMatrix {
       const charLimit = isTyping ? typewriter.currentChar : maxMsgLength;
 
       for (const char of str.slice(0, charLimit)) {
-        // TODO: make the 8 car lime green like on the real boards
-        this.renderChar(p, char, charStartX, startY, color);
+        const charColor = colIndex === 1 && char === "8" ? dotColor.highlight : color;
+        this.renderChar(p, char, charStartX, startY, charColor);
         charStartX += (charWidth + charGap) * this.dotUnit;
       }
 

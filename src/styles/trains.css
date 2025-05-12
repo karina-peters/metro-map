@@ -28,6 +28,12 @@
   }
 
   .list-target {
-    margin: 0;
+    margin: 0.5rem 0;
+    gap: 0.25rem;
+  }
+
+  .btn-train {
+    cursor: pointer;
+    width: 3.25rem;
   }
 }
